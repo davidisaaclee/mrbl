@@ -1,0 +1,15 @@
+body {
+  padding: 0;
+  margin: 0;
+  left: 0;
+  top: 0;
+  overflow: hidden;
+}
+.mg-app .inspector {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 35vw;
+  height: 100vh;
+  background-color: rgba(100,100,100,0.5);
+}
