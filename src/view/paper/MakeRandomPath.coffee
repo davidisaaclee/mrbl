@@ -47,7 +47,7 @@ _ = require 'lodash'
 
 #   return new fabric.Path svgPathString
 
-makeRandomPath = (paper, bounds = {}, maxSegments = 10) ->
+makeRandomPath = (paper, bounds = {}, maxSegments = 5) ->
   bounds = _.defaults bounds,
     left: 0
     top: 0

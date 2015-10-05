@@ -1,78 +1,78 @@
+_ = require 'lodash'
+
 Store = require './Store'
-SynthPool = require '../audio/SynthPool'
+WorldStore = require './World'
+# SynthPool = require '../audio/SynthPool'
 k = require '../Constants'
 
 class Synths extends Store
-  constructor: () ->
-    super arguments...
-
-    @synthPool = new SynthPool
-      voices: 3
-    @synthPool.output.connect k.AudioContext.destination
-
   getDefaultData: () ->
-    synthOptions: {}
+    synths: []
 
   delegate: (payload) ->
     data = payload?.action?.data
 
     switch payload?.action?.actionType
-      when 'didMakeEntity'
+      when 'didAddEntity'
         {entity} = data
         entity.synth =
+          id: entity.entityId
+          level: 0
           options: @defaultSynthOptions()
         Object.defineProperty entity.synth, 'needsFile',
           get: () -> not entity.synth.options.granular.buffer?
 
       when 'loadBufferIntoEntity'
         {buffer, entity} = data
-        # if not @data.synthOptions[entityId]?
-        #   @data.synthOptions[entityId] = @defaultSynthOptions()
         if not entity.synth?
           console.log 'entity has no synth', entity
           debugger
 
-        @loadBuffer buffer, entityId
+        @loadBuffer buffer, entity.synth
         entity.synth.needsFile = false
-
         @emitChange()
-
-        @activateSynth entityId
 
       when 'didUpdateNearestEntities'
         # data :: [{entity, distance, viewDistanceRatio}]
         cooked = data.map ({entity, distance, viewDistanceRatio}) ->
-          id: entity.entityId
+          synth: entity.synth
           level: (0.5 - viewDistanceRatio) * 2.0
 
         @setLevels cooked
+        @emitChange()
+
+      when 'setSynthParameter'
+        {synth, parameter} = data
+        @setParameter parameter.name, parameter.value, synth
+        @emitChange()
 
   defaultSynthOptions: () ->
-    voices: 4
+    voices: 6
     granular:
       buffer: null
       center: 0.5
-      grainDuration: 0.1
-      durationRandom: 0.1
-      deviation: 0.1
-      fadeRatio: 0.3
+      grainDuration: 0.01
+      durationRandom: 0.005
+      deviation: 0.01
+      fadeRatio: 0.5
       gain: 0.25
       detune: 0
 
-  loadBuffer: (buffer, id) ->
-    @data.synthOptions[id].granular.buffer = buffer
+  loadBuffer: (buffer, synthData) ->
+    synthData.options.granular.buffer = buffer
 
-  activateSynth: (id) ->
-    opts = @data.synthOptions[id]
-    if opts?
-      @synthPool.prioritize 1, id, opts
 
   setLevels: (levelsInfo) ->
-    levelsInfo.forEach ({id, level}) =>
-      synthOpts = @data.synthOptions[id]
-      if synthOpts?
-        @synthPool.prioritize level, id, synthOpts
-        @synthPool.setGain id, level
+    @data.synths = _ levelsInfo
+      .sortBy (a, b) -> a.level - b.level
+      .map ({synth, level}) ->
+        synth.level = level
+        return synth
+      .value()
+
+  setParameter: (pName, pValue, synth) ->
+    if synth.options.granular[pName]?
+      synth.options.granular[pName] = pValue
 
 
 module.exports = new Synths()

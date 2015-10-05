@@ -4,6 +4,7 @@ Dispatchable = require '../util/Dispatchable'
 dispatcher = require '../Dispatcher'
 
 EditorStore = require '../stores/Editor'
+SynthStore = require '../stores/Synths'
 
 MGControls = React.createClass
   displayName: 'MGControls'
@@ -11,17 +12,20 @@ MGControls = React.createClass
   componentDidMount: () ->
     Dispatchable this, dispatcher
 
+    EditorStore.addChangeListener @_onChange
+
+  componentWillUnmount: () ->
+    EditorStore.removeChangeListener @_onChange
+
   getInitialState: () ->
-    editor: EditorStore.getAll()
+    EditorStore.getAll()
 
   render: () ->
     <div className="mg-controls">
-      {switch @state.mode
-        when 'choose-file'
+      { if @state.activeEntity?.synth?.needsFile
           @_renderChooseFile()
         else
-          @_renderParameters()
-      }
+          @_renderParameters() }
     </div>
 
   _renderChooseFile: () ->
@@ -33,11 +37,13 @@ MGControls = React.createClass
 
   _renderParameters: () ->
     <div className="faders">
-      {if @props.parameters?
+      <span>faders!</span>
+      {###activeSynth =  EditorStore.activeEntity.id
+        if @props.parameters?
         @props.parameters.map (param) =>
           <Fader key={param.id}
                  displayName={param.display}
-                 handleInput={@handleParamChange param}/>}
+                 handleInput={@handleParamChange param}/>###}
     </div>
 
   handleDragover: (evt) ->
@@ -61,5 +67,8 @@ MGControls = React.createClass
     @props.actionCreator.setParameter @props.id,
       id: paramData.id
       value: scaled
+
+  _onChange: () ->
+    @setState EditorStore.getAll()
 
 module.exports = MGControls

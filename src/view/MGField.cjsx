@@ -4,6 +4,7 @@ Paper = require 'paper'
 
 WorldStore = require '../stores/World'
 EditorStore = require '../stores/Editor'
+UserStore = require '../stores/User'
 
 makeRandomPath = require './paper/MakeRandomPath'
 setupCameraTool = require './paper/CameraControl'
@@ -11,11 +12,13 @@ setupCameraTool = require './paper/CameraControl'
 Dispatchable = require '../util/Dispatchable'
 dispatcher = require '../Dispatcher'
 
-randomColor = () ->
-  new Paper.Color
+randomColor = (options = {}) ->
+  options = _.defaults options,
     hue: Math.random() * 360
     saturation: Math.random()
     brightness: Math.random()
+
+  new Paper.Color options
 
 MGField = React.createClass
   displayName: 'MGField'
@@ -25,31 +28,61 @@ MGField = React.createClass
   getInitialState: () ->
     world: WorldStore.getAll()
     editor: EditorStore.getAll()
+    user: UserStore.getAll()
 
   componentDidMount: () ->
     Dispatchable this, dispatcher
     WorldStore.addChangeListener @_onChange
     EditorStore.addChangeListener @_onChange
+    UserStore.addChangeListener @_onChange
     @setupCanvas @refs.canvas.getDOMNode()
 
   setupCanvas: (canvasNode) ->
     @dispatch 'setupCanvas', canvasNode: canvasNode
 
-    # [0...3].map (idx) =>
-    #   # @makeEntity idx
-    #   @dispatch 'wantsAddEntity',
-    #     position: Paper.view.center
+    paper = @state.world.paper.scope
 
-    tool = new Paper.Tool()
+    @backgroundLayer = new paper.Layer
+      name: 'background'
+    @backgroundLayer.sendToBack()
+
+    backgroundShapes =
+      [-10...10]
+        .map (x) ->
+          [-10...10].map (y) -> new paper.Point x, y
+        .reduce (acc, elm) -> acc.concat elm
+        .map (coordinate) ->
+          size = 1000
+          outerColor = new paper.Color 0, 0
+
+          coordinate =
+            coordinate.add [Math.random(),
+                            Math.random()]
+
+          r = new paper.Path.Circle
+            center: coordinate.multiply (size / 2)
+            radius: size
+          r.fillColor =
+            gradient:
+              stops: [(randomColor {saturation: 0.5, brightness: 0.6}), outerColor]
+              radial: true
+            origin: r.bounds.center
+            destination: r.bounds.rightCenter
+          return r
+        .forEach (circle) =>
+          @backgroundLayer.addChild circle
+
+    tool = new paper.Tool()
     @setupAddEntityTool tool, canvasNode
     @setupSelectionTool tool, canvasNode
-    setupCameraTool tool, canvasNode, () =>
-      @dispatch 'didViewportTransform'
+    setupCameraTool paper, tool, canvasNode, () =>
+      @dispatch 'didViewportTransform',
+        paper: paper
 
 
   setupAddEntityTool: (tool) ->
     tool.on 'mousedown', (evt) =>
-      if Paper.Key.isDown 'shift'
+      if @state.world.paper.scope.Key.isDown 'shift'
         @dispatch 'wantsAddEntity',
           position: evt.downPoint
 
@@ -88,19 +121,15 @@ MGField = React.createClass
 
     tool.on 'mouseup', (evt) =>
       if lastHit?
-        @dispatch 'beginEditEntity',
+        @dispatch 'wantsEditEntity',
           id: lastHit.data.entityId
       # else
       #   @dispatch 'cancelEditEntity'
 
     tool.on 'mousedown', (evt) =>
-      if not lastHit? and (not Paper.Key.isDown 'shift')
+      if not lastHit? and (not @state.world.paper.scope.Key.isDown 'shift')
         @dispatch 'cancelEditEntity'
 
-
-  canvasStyle: () ->
-    width: @props.width
-    height: @props.height
 
   handleDragover: (evt) ->
     evt.stopPropagation()
@@ -117,11 +146,12 @@ MGField = React.createClass
     if file?
       @dispatch 'wantsAddEntity',
         file: file
-        position: Paper.view.viewToProject pt
+        position: @state.world.paper.scope.view.viewToProject pt
 
   render: () ->
     <canvas className="mg-field"
             id="mg-field-canvas"
+            style={@props.style}
             width={@props.width}
             height={@props.height}
             onDragOver={@handleDragover}
@@ -130,10 +160,16 @@ MGField = React.createClass
             ref="canvas">
     </canvas>
 
+  _update: () ->
+    @backgroundLayer?.translate (new Paper.Point @state.user.deltaPosition).multiply 0.5
+
   _onChange: () ->
     @setState
       world: WorldStore.getAll()
       editor: EditorStore.getAll()
+      user: UserStore.getAll()
+
+    @_update()
 
 
 module.exports = MGField

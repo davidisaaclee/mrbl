@@ -5,11 +5,31 @@ body {
   top: 0;
   overflow: hidden;
 }
-.mg-app .inspector {
-  position: fixed;
-  left: 0;
-  top: 0;
-  width: 35vw;
+.mg-inspector-canvas {
+  -webkit-transition: all 1s;
+          transition: all 1s;
+}
+.mg-inspector-canvas.visible {
+  z-index: 2;
+  opacity: 1;
+}
+.mg-inspector-canvas.hidden {
+  z-index: -1;
+  opacity: 0;
+}
+.mg-app {
+  display: -webkit-box;
+  display: -webkit-flex;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-align: center;
+  -webkit-align-items: center;
+      -ms-flex-align: center;
+          align-items: center;
+  -webkit-box-pack: center;
+  -webkit-justify-content: center;
+      -ms-flex-pack: center;
+          justify-content: center;
+  width: 100vw;
   height: 100vh;
-  background-color: rgba(100,100,100,0.5);
 }

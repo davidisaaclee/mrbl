@@ -1,5 +1,6 @@
 React = require 'react'
 MGControls = require './MGControls'
+MGInspector = require './MGInspector'
 MGField = require './MGField'
 
 WorldStore = require '../stores/World'
@@ -33,11 +34,20 @@ MGApp = React.createClass
     <div className="mg-app">
       <MGField width={@_screenDimensions().width}
                height={@_screenDimensions().height}
-               dispatcher={@props.dispatcher}/>
+               style={@_fieldStyle()}/>
+      {###
       <div className="inspector" style={@inspectorStyle()}>
-        <MGControls/>
-      </div>
+      </div>###}
+      <MGInspector hidden={not @state.editor.activeEntityId?}/>
     </div>
+
+  _fieldStyle: () ->
+    position: 'fixed'
+    left: 0
+    top: 0
+    zIndex: 0
+    backgroundColor: 'black'
+
 
   _screenDimensions: () ->
     width: Math.max(document.documentElement.clientWidth, window.innerWidth || 0)

@@ -29,6 +29,7 @@
     "es6-promise": "^3.0.2",
     "fabric-browserify": "^1.4.13",
     "lodash": "^3.10.1",
+    "object.observe": "^0.2.4",
     "oo-eventtarget": "0.0.3",
     "paper": "^0.9.24",
     "react": "^0.13.3"

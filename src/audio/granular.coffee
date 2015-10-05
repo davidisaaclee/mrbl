@@ -1,4 +1,5 @@
 _ = require 'lodash'
+require 'object.observe'
 
 TimeoutManager = require '../util/TimeoutManager'
 
@@ -32,12 +33,13 @@ class GranularVoice
       get: () -> s2ms @options.buffer.duration
 
   set: (options = {}) ->
-    if options.buffer
+    if options.buffer? and options.buffer isnt @sampler.buffer
       @noteOff()
       @sampler.noteOff()
       @sampler.output.disconnect()
       @sampler = new Sampler @audioContext, @options.buffer
       @sampler.output.connect @envelope.input
+      @noteOn 1
 
     @options = _.assign @options, options
 
@@ -131,8 +133,8 @@ class GranularSynth
     Object.defineProperty this, 'bufferDuration',
       get: () -> s2ms @options.granular.buffer?.duration
 
-    Object.observe @options.granular, () =>
-      @voices.forEach (voice) => voice.options = @options.granular
+    # Object.observe @options.granular, () =>
+    #   @voices.forEach (voice) => voice.set @options.granular
 
 
   noteOn: (velocity) ->
@@ -194,8 +196,8 @@ class GranularSynth
     _.values @parameters()
 
   set: (options) ->
-    if options.buffer?
-      @noteOff()
+    # if options.granular.buffer? and options.granular.buffer isnt @options.granular.buffer
+    #   @noteOff()
 
     granularOptions = _.assign @options.granular, options.granular
     @options = _.assign @options, options

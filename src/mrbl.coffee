@@ -8,9 +8,14 @@ GranularSynth = require './audio/granular'
 MGControls = require './view/MGControls'
 MGApp = require './view/MGApp'
 
+SynthPool = require './audio/SynthPool'
+
+k = require './Constants'
+
 dispatcher = require './Dispatcher'
 world = require './stores/World'
 require './stores/Synths'
+require './stores/User'
 
 # audioCtx = new (window.AudioContext || window.webkitAudioContext)()
 
@@ -70,6 +75,11 @@ class MainView
     React.render \
       (React.createElement @rootElement, props),
       @container
+
+sp = new SynthPool
+  voices: 3
+
+sp.output.connect k.AudioContext.destination
 
 # dispatcher.register 'MGField', new MGFieldDelegate()
 
