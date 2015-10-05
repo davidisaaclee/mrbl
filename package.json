@@ -1,0 +1,36 @@
+{
+  "name": "mrbl",
+  "version": "0.1.0",
+  "description": "spatial audio playground",
+  "main": "mrbl.js",
+  "scripts": {
+    "build-js-vendor": "browserify -r react -r lodash -o dist/vendor.js",
+    "build-js": "browserify -x react -x lodash src/mrbl.coffee -o dist/mrbl.js -t coffee-reactify --extension=\".coffee\" --extension=\".cjsx\"",
+    "watch-js": "watchify -x react -x lodash src/mrbl.coffee -o dist/mrbl.js -t coffee-reactify --extension=\".coffee\" --extension=\".cjsx\" -dv",
+    "build-css": "stylus -u autoprefixer-stylus style/index.styl --out dist/mrbl.css",
+    "watch-css": "stylus -u autoprefixer-stylus style/index.styl --out dist/mrbl.css -w",
+    "build": "npm run build-js & npm run build-css",
+    "watch": "npm run watch-js & npm run watch-css",
+    "livereload": "livereloadify dist",
+    "dev": "npm run watch & npm run livereload"
+  },
+  "author": "David Isaac Lee <david@david-lee.net> (http://david-lee.net/)",
+  "license": "ISC",
+  "devDependencies": {
+    "autoprefixer-stylus": "^0.8.0",
+    "browserify": "^11.2.0",
+    "coffee-reactify": "^4.0.0",
+    "coffeeify": "^1.1.0",
+    "livereloadify": "^2.0.0",
+    "stylus": "^0.52.4",
+    "watchify": "^3.4.0"
+  },
+  "dependencies": {
+    "es6-promise": "^3.0.2",
+    "fabric-browserify": "^1.4.13",
+    "lodash": "^3.10.1",
+    "oo-eventtarget": "0.0.3",
+    "paper": "^0.9.24",
+    "react": "^0.13.3"
+  }
+}

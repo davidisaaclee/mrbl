@@ -1,0 +1,216 @@
+React = require 'react'
+Paper = require 'paper'
+# Fabric = require 'fabric-browserify'
+
+makeRandomPath = require './paper/MakeRandomPath'
+
+randomColor = () ->
+  new Paper.Color
+    hue: Math.random() * 360
+    saturation: Math.random()
+    brightness: Math.random()
+
+MGField = React.createClass
+  displayName: 'MGField'
+
+  shadowAmount: [20, 20]
+
+  getInitialState: () ->
+    selected: null
+
+  componentDidMount: () ->
+    # canvas = @refs.canvas.getDOMNode()
+    # Paper.setup canvas
+
+    @stage = new fabric.Canvas 'mg-field-canvas'
+
+    # @stage.on 'mouse:down', () ->
+    #   console.log 'mosuedown', arguments...
+
+
+    # @state.shadows = new Paper.Layer()
+    #   # position: Paper.view.center
+    # @state.entities = new Paper.Layer()
+    #   # position: Paper.view.center
+
+    # @state.shadows = new createjs.Container()
+    # @state.entities = new createjs.Container()
+    @state.shadows = new fabric.Group []
+    @state.entities = new fabric.Group []
+
+    # square = new Paper.Path.Rectangle
+    #   point: [30, 30]
+    #   size: [50, 50]
+    #   strokeColor: 'black'
+
+    square = new fabric.Rect
+      left: 30
+      top: 30
+      width: 50
+      height: 50
+      fill: 'green'
+
+    @stage.add square
+
+
+    # for i in [0...3]
+    #   random = makeRandomPath Paper,
+    #     left: 0
+    #     top: 0
+    #     width: 500
+    #     height: 500
+    #   random.translate [Math.random() * 1000, Math.random() * 1000]
+
+    for i in [0...1]
+      random = makeRandomPath
+        left: 0
+        top: 0
+        width: 500
+        height: 500
+      random.set
+        left: Math.random() * 300
+        top: Math.random() * 300
+      random.set fill: 'green'
+      @stage.add random
+
+      @makeEntity random
+
+    # Paper.project.activeLayer.fillColor = {
+    #     gradient: {
+    #         stops: [ 'yellow', 'red', 'blue'
+    #                , 'yellow', 'red', 'blue'
+    #                , 'yellow', 'red', 'blue'
+    #                , 'yellow', 'red', 'blue'
+    #                , 'yellow', 'red', 'blue'
+    #                ]
+    #     },
+    #     origin: [0, 0],
+    #     destination: [1500, 1500]
+    #     radial: true
+    # }
+
+    # circle = new Paper.Path.Circle
+    #   center: [200, 200]
+    #   radius: 30
+    #   strokeColor: 'black'
+    #   fillColor: 'black'
+
+    @makeEntity square
+    # @makeEntity circle
+
+    # Paper.view.draw()
+
+    # tool = new Paper.Tool()
+    # tool.onMouseMove = do () =>
+    #   hitOptions =
+    #     segments: true
+    #     stroke: true
+    #     fill: true
+    #     tolerance: 5
+    #   hitBuffer = null
+
+    #   return (evt) =>
+    #     if hitBuffer?
+    #       do hitBuffer
+
+    #     for entity in @state.entities
+    #       hitResults = entity.item.hitTest evt.point, hitOptions
+    #       if hitResults?
+    #         oldColor = hitResults.item.strokeColor
+    #         hitBuffer = () -> hitResults.item.strokeColor = oldColor
+    #         hitResults.item.strokeColor = 'blue'
+    #         break
+
+    # zoom = (amount, pt) ->
+    #   scrollAmount = Paper.view.center.subtract pt
+    #   Paper.view.scrollBy scrollAmount
+    #   Paper.view.zoom *= amount
+    #   Paper.view.scrollBy scrollAmount.negate().multiply amount
+
+    # panInertia = new Paper.Point 0, 0
+
+    # canvas.addEventListener 'mousewheel', (evt) ->
+    #   evt.stopPropagation()
+    #   evt.preventDefault()
+
+    #   if Paper.Key.isDown 'option'
+    #     delta = new Paper.Point evt.deltaX, evt.deltaY
+    #     # delta = delta.multiply 0.1
+    #     # panInertia = panInertia.add delta
+    #     panInertia = delta
+
+    #   else
+    #     mouseOffset = new Paper.Point evt.offsetX, evt.offsetY
+    #     projMouseOffset = Paper.view.viewToProject mouseOffset
+
+    #     delta = evt.deltaY / 100.0
+    #     delta *= 0.8
+    #     zoom (1 + delta), projMouseOffset
+
+
+    # tool.onMouseDrag = do ->
+    #   lastScroll = new Paper.Point 0, 0
+    #   return (evt) ->
+    #     if Paper.Key.isDown 'option'
+    #       mouseOffset = new Paper.Point evt.offsetX, evt.offsetY
+    #       projMouseOffset = Paper.view.viewToProject mouseOffset
+    #       zoom 1 + 2 * evt.delta.x / Paper.view.size.width, Paper.view.center
+    #     else
+    #       lastPointAdjust = evt.lastPoint.add lastScroll
+    #       scrollAmount = lastPointAdjust.subtract evt.point
+    #       panInertia = panInertia.add scrollAmount.multiply 0.4
+
+    # window.addEventListener 'focus', () ->
+    #   panInertia = new Paper.Point 0, 0
+
+    # tool.onMouseDown = (evt) ->
+    #   panInertia = new Paper.Point 0, 0
+
+    # Paper.view.on 'frame', (evt) ->
+    #   maxPanSpeed = 100
+    #   if (Math.abs panInertia.x) > maxPanSpeed
+    #     panInertia.x = 0
+    #     panInertia.y = 0
+    #     return
+    #     # panInertia.x = Math.sign(panInertia.x) * maxPanSpeed
+    #   if (Math.abs panInertia.y) > maxPanSpeed
+    #     panInertia.x = 0
+    #     panInertia.y = 0
+    #     return
+    #     # panInertia.y = Math.sign(panInertia.y) * maxPanSpeed
+
+    #   Paper.view.scrollBy panInertia
+    #   if not Paper.Key.isDown 'option'
+    #     panInertia = panInertia.multiply (58 * evt.delta)
+
+  canvasStyle: () ->
+    width: @props.width
+    height: @props.height
+
+  makeEntity: (path) ->
+    @state.entities.add path
+    @_makeShadow path
+
+  render: () ->
+    <canvas className="mg-field"
+            id="mg-field-canvas"
+            width={@props.width}
+            height={@props.height}
+            resize
+            ref="canvas">
+    </canvas>
+
+
+  # fixme
+  _makeShadow: (path) ->
+    onClone = (s) =>
+      s.set
+        fill: 'black'
+        opacity: 0.3
+        left: (path.get 'left') + @shadowAmount[0]
+        top: (path.get 'top') + @shadowAmount[1]
+      @state.shadows.add s
+    path.clone onClone
+
+
+module.exports = MGField
