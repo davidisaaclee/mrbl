@@ -9,6 +9,7 @@ class World extends Store
   constructor: () ->
     super arguments...
     @entityCount = 0
+    @_fixedEltUpdates = {}
 
 
   getDefaultData: () ->
@@ -54,7 +55,7 @@ class World extends Store
         {id} = data
         entity = @getEntity id
         if entity?
-          @focusOnItem entity.path
+          @focusOnItem entity.path, [0, entity.path.bounds.height * 0.1]
             .then () =>
               @dispatch 'didBeginEditEntity', entity: entity
         else
@@ -63,6 +64,9 @@ class World extends Store
       when 'wantsFocusOnItem'
         {item, offset} = data
         @focusOnItem item, offset
+
+      when 'didViewportTransform'
+        @_updateFixedElements()
 
 
   makeNewEntity: (position) ->
@@ -78,6 +82,7 @@ class World extends Store
       path: path
       shadow: shadow
       entityId: id
+
 
   setupCanvas: (canvas) ->
     @paper = new Paper.PaperScope()
@@ -98,7 +103,7 @@ class World extends Store
     point = item.position
 
     # nudge item up a little bit
-    offset = [0, view.viewSize.height * 0.08]
+    # offset = [0, view.viewSize.height * 0.08]
     point = point.add offset
 
     widthZoomDst = view.viewSize.width / item.bounds.width
@@ -120,11 +125,14 @@ class World extends Store
       @_animateZoom (zoomToFitDst * zoomFactor), view, 0.2
         .then finish, reject
 
-  _animatePanTo: (dst, view, duration) ->
+  _animatePanTo: (dst, view, speed) ->
     return new Promise (resolve, reject) =>
       elapsed = 0
       src = view.center
       travel = dst.subtract src
+
+      # duration = travel.length / speed
+      duration = speed
 
       animatePan = (evt) =>
         elapsed += evt.delta
@@ -144,11 +152,14 @@ class World extends Store
 
       view.on 'frame', animatePan
 
-  _animateZoom: (zoomDst, view, duration) ->
+  _animateZoom: (zoomDst, view, speed) ->
     return new Promise (resolve, reject) =>
       elapsed = 0
       src = view.zoom
       travel = zoomDst - src
+
+      # duration = travel / speed
+      duration = speed
 
       animateZoomFrame = (evt) =>
         elapsed += evt.delta
@@ -170,18 +181,34 @@ class World extends Store
 
   handleMouseHoverEntity: do ->
     reset = null
-    return (entity, state) =>
+    return (entity, state) ->
       switch state
         when 'enter'
           if reset?
             do reset
 
+          setStrokeWidth = () =>
+            entity.path.strokeWidth = 3 * 1 / @data.paper.scope.view.zoom
+          @_fixedEltUpdates[entity.id] = setStrokeWidth
+
           oldColor = entity.path.strokeColor
-          reset = () -> entity.path.strokeColor = oldColor
-          entity.path.strokeColor = 'blue'
+          oldWidth = entity.path.strokeWidth
+
+          reset = () =>
+            entity.path.strokeColor = oldColor
+            entity.path.strokeWidth = oldWidth
+            delete @_fixedEltUpdates[entity.id]
+
+          entity.path.strokeColor = '#4181FF'
+          do setStrokeWidth
+
         when 'exit'
           if reset?
             do reset
+
+  _updateFixedElements: () ->
+    _.values @_fixedEltUpdates
+      .forEach (fn) -> do fn
 
 
   _makePaperEntity: (id, position) ->
@@ -199,10 +226,9 @@ class World extends Store
     item = makeRandomPath @paper,
       left: 0
       top: 0
-      width: Math.random() * 2000
-      height: Math.random() * 2000
+      width: Math.random() * 450 + 50
+      height: Math.random() * 450 + 50
     item.position = position
-    # item.strokeColor = 'black'
     item.fillColor =
       gradient:
         stops: [ randomColor {brightness: 0.8}
@@ -216,7 +242,7 @@ class World extends Store
   _makeShadow: (path) ->
     r = path.clone()
     r.fillColor = 'black'
-    r.opacity = 0.3
+    r.opacity = 0.6
     r.translate [30, 30]
     return r
 

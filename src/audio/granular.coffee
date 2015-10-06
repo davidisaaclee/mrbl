@@ -89,10 +89,12 @@ class GranularVoice
 
 
   _pickGrain: () ->
+    # maxDuration = @bufferDuration
+    maxDuration = 3000
     if @options.buffer?
-      deviation = Math.random() * @options.deviation * @bufferDuration
-      durationRandom = Math.random() * @options.durationRandom * @bufferDuration
-      duration = @options.grainDuration * @bufferDuration + durationRandom
+      deviation = Math.random() * @options.deviation * maxDuration
+      durationRandom = Math.random() * @options.durationRandom * maxDuration
+      duration = @options.grainDuration * maxDuration + durationRandom
 
       offset: @options.center * @bufferDuration - (duration / 2) + deviation
       duration: duration

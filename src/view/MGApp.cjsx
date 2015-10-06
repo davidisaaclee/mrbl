@@ -14,12 +14,24 @@ MGApp = React.createClass
 
   componentDidMount: () ->
     Dispatchable this, dispatcher
+
     WorldStore.addChangeListener @_onChange
     EditorStore.addChangeListener @_onChange
+
+    # window.addEventListener 'resize', () => @onResize()
+    # do @onResize
+
+    # bcr = @refs.container.getDOMNode().getBoundingClientRect()
+    # console.log bcr
+    # @refs.field.setProps
+    #   width: bcr.width
+    #   height: bcr.height
 
   componentWillUnmount: () ->
     WorldStore.removeChangeListener @_onChange
     EditorStore.removeChangeListener @_onChange
+
+    window.removeEventListener 'resize', () => @onResize()
 
   getInitialState: () ->
     world: WorldStore.getAll()
@@ -31,27 +43,38 @@ MGApp = React.createClass
     else {}
 
   render: () ->
-    <div className="mg-app">
-      <MGField width={@_screenDimensions().width}
-               height={@_screenDimensions().height}
-               style={@_fieldStyle()}/>
-      {###
-      <div className="inspector" style={@inspectorStyle()}>
-      </div>###}
+    <div id="mg-app"
+         className="mg-app"
+         ref="container">
+      <MGField width={@props.width}
+               height={@props.height}
+               style={@_fieldStyle()}
+               ref="field"/>
       <MGInspector hidden={not @state.editor.activeEntityId?}/>
     </div>
 
+  # onResize: () ->
+  #   bcr = @refs.container.getDOMNode().getBoundingClientRect()
+  #   @setProps
+  #     width: bcr.width - 80
+  #     height: bcr.height - 80
+
   _fieldStyle: () ->
-    position: 'fixed'
-    left: 0
-    top: 0
     zIndex: 0
     backgroundColor: 'black'
 
 
   _screenDimensions: () ->
-    width: Math.max(document.documentElement.clientWidth, window.innerWidth || 0)
-    height: Math.max(document.documentElement.clientHeight, window.innerHeight || 0)
+    container = @refs.container
+    if container?
+      bcr = container.getDOMNode().getBoundingClientRect()
+      width: bcr.width
+      height: bcr.height
+    else
+      width: Math.max(document.documentElement.clientWidth, window.innerWidth || 0)
+      height: Math.max(document.documentElement.clientHeight, window.innerHeight || 0)
+    # width: '100%'
+    # height: '100%'
 
   _onChange: () ->
     @setState

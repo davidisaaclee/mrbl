@@ -3,31 +3,41 @@ body
   margin 0
   left 0
   top 0
-  overflow hidden
+  // overflow hidden
+
+#container
+  box-sizing border-box
+  padding 40px
+  background-color black
+  width 100vw
+  height 100vh
+
+.mg-app
+  // box-sizing border-box
+  position relative
+  display flex
+  align-items center
+  justify-content center
+  height 100%
+  width 100%
+
+
+.mg-field
+  position absolute
+  left 0
+  top 0
+  // width 100vw
+  // height 100vh
 
 .mg-inspector-canvas
   transition all 1s
-  
+
 .mg-inspector-canvas.visible
   // display initial
   z-index 2
   opacity 1
-  
+
 .mg-inspector-canvas.hidden
   // display none
   z-index -1
   opacity 0
-
-.mg-app
-  display flex
-  align-items center
-  justify-content center
-  width 100vw
-  height 100vh
-  // .inspector
-  //   position fixed
-  //   left 0
-  //   top 0
-  //   width 35vw
-  //   height 100vh
-  //   background-color rgba(100, 100, 100, 0.5)

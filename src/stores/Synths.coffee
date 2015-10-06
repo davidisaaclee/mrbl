@@ -54,7 +54,7 @@ class Synths extends Store
       grainDuration: 0.01
       durationRandom: 0.005
       deviation: 0.01
-      fadeRatio: 0.5
+      fadeRatio: 0.2
       gain: 0.25
       detune: 0
 

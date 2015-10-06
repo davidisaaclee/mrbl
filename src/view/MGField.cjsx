@@ -6,6 +6,7 @@ WorldStore = require '../stores/World'
 EditorStore = require '../stores/Editor'
 UserStore = require '../stores/User'
 
+makeTiledItem = require './paper/TiledItem'
 makeRandomPath = require './paper/MakeRandomPath'
 setupCameraTool = require './paper/CameraControl'
 
@@ -37,40 +38,23 @@ MGField = React.createClass
     UserStore.addChangeListener @_onChange
     @setupCanvas @refs.canvas.getDOMNode()
 
+  componentWillReceiveProps: (props) ->
+    # TODO
+    # maybe this is causing a DOM redraw?
+    # try doing it in mrbl.coffee
+    # canvas = @refs.canvas.getDOMNode()
+    # if props.width?
+    #   canvas.setAttribute 'width', props.width
+    # if props.height?
+    #   canvas.setAttribute 'height', props.height
+
+
   setupCanvas: (canvasNode) ->
     @dispatch 'setupCanvas', canvasNode: canvasNode
 
     paper = @state.world.paper.scope
 
-    @backgroundLayer = new paper.Layer
-      name: 'background'
-    @backgroundLayer.sendToBack()
-
-    backgroundShapes =
-      [-10...10]
-        .map (x) ->
-          [-10...10].map (y) -> new paper.Point x, y
-        .reduce (acc, elm) -> acc.concat elm
-        .map (coordinate) ->
-          size = 1000
-          outerColor = new paper.Color 0, 0
-
-          coordinate =
-            coordinate.add [Math.random(),
-                            Math.random()]
-
-          r = new paper.Path.Circle
-            center: coordinate.multiply (size / 2)
-            radius: size
-          r.fillColor =
-            gradient:
-              stops: [(randomColor {saturation: 0.5, brightness: 0.6}), outerColor]
-              radial: true
-            origin: r.bounds.center
-            destination: r.bounds.rightCenter
-          return r
-        .forEach (circle) =>
-          @backgroundLayer.addChild circle
+    @_makeBackground paper
 
     tool = new paper.Tool()
     @setupAddEntityTool tool, canvasNode
@@ -152,16 +136,21 @@ MGField = React.createClass
     <canvas className="mg-field"
             id="mg-field-canvas"
             style={@props.style}
-            width={@props.width}
-            height={@props.height}
             onDragOver={@handleDragover}
             onDrop={@handleDrop}
-            resize
+            width={@props.width}
+            height={@props.height}
+            data-resize="true"
             ref="canvas">
     </canvas>
 
   _update: () ->
+    @_updateBackground()
+
+
+  _updateBackground: () ->
     @backgroundLayer?.translate (new Paper.Point @state.user.deltaPosition).multiply 0.5
+
 
   _onChange: () ->
     @setState
@@ -170,6 +159,78 @@ MGField = React.createClass
       user: UserStore.getAll()
 
     @_update()
+
+
+  _makeBackground: (paper) ->
+    @backgroundLayer = new paper.Layer
+      name: 'background'
+    @backgroundLayer.sendToBack()
+
+    blobProto = @_makeBackgroundBlob paper, [0, 0]
+    @backgroundLayer.addChild blobProto
+
+    outerColor = new paper.Color 0, 0
+    backgroundShapes =
+      [-10...10]
+        .map (x) ->
+          [-10...10].map (y) -> new paper.Point x, y
+        .reduce (acc, elm) -> acc.concat elm
+        .map (coordinate) =>
+          clone = blobProto.clone()
+          clone.position = coordinate.multiply [800, 800]
+          clone.position = clone.position.add [ Math.random() * 400
+                                                Math.random() * 400 ]
+
+          hues = [
+            5
+            187
+            # 60
+          ]
+
+          innerColor = new paper.Color
+            hue: hues[Math.floor (Math.random() * hues.length)]
+            saturation: 0.3
+            brightness: 0.4
+          outerColor = randomColor {saturation: 0.3, brightness: 0.3}
+          outerColor.alpha = 0
+          clone.fillColor =
+            gradient:
+              stops: [innerColor, outerColor]
+              radial: true
+            origin: clone.bounds.center
+            destination: clone.bounds.rightCenter
+
+
+    rasterUrl = 'http://www.neilblevins.com/cg_education/procedural_noise/perlin_fractal_max.jpg'
+    noise = new paper.Raster rasterUrl
+    noise.opacity = 0.2
+    noise.blendMode = 'multiply'
+    noise.onLoad = () =>
+      tiledNoise = makeTiledItem paper, noise,
+        widthInTiles: 10
+        heightInTiles: 10
+        removeOriginal: true
+        layer: @backgroundLayer
+      @backgroundLayer.addChild tiledNoise
+
+
+  _makeBackgroundBlob: (paper, position) ->
+    size = 1000
+    outerColor = new paper.Color 0, 0
+
+    position = (new paper.Point Math.random(), Math.random()).add position
+
+    r = new paper.Path.Circle
+      center: position.multiply (size / 2)
+      radius: size
+    r.fillColor =
+      gradient:
+        stops: [(randomColor {saturation: 0.5, brightness: 0.6}), outerColor]
+        radial: true
+      origin: r.bounds.center
+      destination: r.bounds.rightCenter
+    r.blendMode = 'normal'
+    return r
 
 
 module.exports = MGField

@@ -1,20 +1,25 @@
+
+kLeftMouseFlag = 1
+
 module.exports = cameraControlTool = (paper, tool, canvas, onTransform) ->
   if not onTransform?
     onTransform = ->
 
+  setupZoom paper, tool, canvas, onTransform
+  setupPan paper, tool, canvas, onTransform
 
+setupZoom = (paper, tool, canvas, onTransform) ->
   zoom = (amount, pt) ->
     scrollAmount = paper.view.center.subtract pt
 
-    if paper.view.zoom > 5 and amount > 1
-      return
-    if paper.view.zoom < 0.5 and amount < 1
-      return
+    newZoom = paper.view.zoom * amount
+    newZoom = Math.max (Math.min newZoom, 5), 0.5
 
-    paper.view.scrollBy scrollAmount
-    paper.view.zoom *= amount
-    paper.view.scrollBy scrollAmount.negate().multiply amount
-    do onTransform
+    if newZoom != paper.view.zoom
+      paper.view.scrollBy scrollAmount
+      paper.view.zoom = newZoom
+      paper.view.scrollBy scrollAmount.negate().multiply amount
+      do onTransform
 
   canvas.addEventListener 'mousewheel', (evt) ->
     evt.stopPropagation()
@@ -24,11 +29,24 @@ module.exports = cameraControlTool = (paper, tool, canvas, onTransform) ->
       mouseOffset = new paper.Point evt.offsetX, evt.offsetY
       projMouseOffset = paper.view.viewToProject mouseOffset
 
-      delta = evt.deltaY / 100.0
+      delta = -evt.deltaY / 100.0
       delta *= 0.8
       zoom (1 + delta), projMouseOffset
 
-  setupPan paper, tool, canvas, onTransform
+  lastX = null
+  canvas.addEventListener 'mousedown', (evt) ->
+    lastX = evt.clientX
+
+  canvas.addEventListener 'mousemove', (evt) ->
+    mouseButtonDown = (evt.buttons & kLeftMouseFlag) is 1
+    if mouseButtonDown and paper.Key.isDown 'option'
+      mouseOffset = new paper.Point evt.offsetX, evt.offsetY
+      projMouseOffset = paper.view.viewToProject mouseOffset
+
+      deltaX = evt.clientX - lastX
+      lastX = evt.clientX
+
+      zoom 1 + 2 * deltaX / paper.view.viewSize.width, paper.view.center
 
 
 setupPan = (paper, tool, canvas, onTransform) ->
@@ -37,20 +55,15 @@ setupPan = (paper, tool, canvas, onTransform) ->
 
   # is this silly?
   lastPoint = null
-  mouseButtonDown = false
-  LEFT_MOUSE = 0
 
-  tool.on 'mousedown', (evt) ->
+  canvas.addEventListener 'mousedown', (evt) ->
     # ToolEvent.point gives us the point in project coordinates
-    lastPoint = paper.view.projectToView evt.point
-    if evt.event.button is LEFT_MOUSE
-      mouseButtonDown = true
-  tool.on 'mouseup', (evt) ->
-    if evt.event.button is LEFT_MOUSE
-      mouseButtonDown = false
+    # lastPoint = paper.view.projectToView evt.point
+    lastPoint = new paper.Point evt.offsetX, evt.offsetY
 
   canvas.addEventListener 'mousemove', (evt) ->
-    if mouseButtonDown
+    mouseButtonDown = (evt.buttons & kLeftMouseFlag) is 1
+    if mouseButtonDown and not paper.Key.isDown 'option'
       pt = new paper.Point evt.offsetX, evt.offsetY
       viewDelta = lastPoint.subtract pt
       panInertia = viewDelta.multiply (1 / paper.view.zoom)
@@ -70,21 +83,13 @@ setupPan = (paper, tool, canvas, onTransform) ->
       delta = delta.multiply (1 / paper.view.zoom)
       panInertia = delta
 
-  # tool.on 'mousedrag', (evt) ->
-  #   # TODO: this is getting triggered too much man
-
-  #   if paper.Key.isDown 'option'
-  #     mouseOffset = new paper.Point evt.offsetX, evt.offsetY
-  #     projMouseOffset = paper.view.viewToProject mouseOffset
-  #     zoom 1 + 2 * evt.delta.x / paper.view.size.width, paper.view.center
-  #   else
-  #     lastPointAdjust = evt.lastPoint.add lastScroll
-  #     scrollAmount = lastPointAdjust.subtract evt.point
-  #     panInertia = panInertia.add scrollAmount.multiply 0.4
-
+  decay = 0.8
   paper.view.on 'frame', (evt) ->
     if panInertia.length > 0.01
       paper.view.center = paper.view.center.add panInertia
       if not paper.Key.isDown 'option'
-        panInertia = panInertia.multiply (58 * evt.delta)
+        # panInertia = panInertia.multiply (60 * decay * evt.delta)
+        delta = (panInertia.multiply decay).subtract panInertia
+        delta.multiply evt.delta
+        panInertia = panInertia.add delta
       do onTransform

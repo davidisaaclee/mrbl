@@ -3,21 +3,16 @@ body {
   margin: 0;
   left: 0;
   top: 0;
-  overflow: hidden;
 }
-.mg-inspector-canvas {
-  -webkit-transition: all 1s;
-          transition: all 1s;
-}
-.mg-inspector-canvas.visible {
-  z-index: 2;
-  opacity: 1;
-}
-.mg-inspector-canvas.hidden {
-  z-index: -1;
-  opacity: 0;
+#container {
+  box-sizing: border-box;
+  padding: 40px;
+  background-color: #000;
+  width: 100vw;
+  height: 100vh;
 }
 .mg-app {
+  position: relative;
   display: -webkit-box;
   display: -webkit-flex;
   display: -ms-flexbox;
@@ -30,6 +25,23 @@ body {
   -webkit-justify-content: center;
       -ms-flex-pack: center;
           justify-content: center;
-  width: 100vw;
-  height: 100vh;
+  height: 100%;
+  width: 100%;
+}
+.mg-field {
+  position: absolute;
+  left: 0;
+  top: 0;
+}
+.mg-inspector-canvas {
+  -webkit-transition: all 1s;
+          transition: all 1s;
+}
+.mg-inspector-canvas.visible {
+  z-index: 2;
+  opacity: 1;
+}
+.mg-inspector-canvas.hidden {
+  z-index: -1;
+  opacity: 0;
 }

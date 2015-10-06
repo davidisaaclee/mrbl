@@ -15,8 +15,8 @@ class Editor extends Store
 
     switch payload?.action?.actionType
       when 'setupInspectorCanvas'
-        {canvasNode} = data
-        @setupCanvas canvasNode
+        {canvas} = data
+        @setupCanvas canvas
         @emitChange()
 
       when 'wantsEditEntity'
@@ -73,8 +73,8 @@ class Editor extends Store
             name: 'center'
             value: newValue
       else
-        nudgeAmountX = evt.deltaX / 100
-        nudgeAmountY = evt.deltaY / 100
+        nudgeAmountX = -evt.deltaX / 100
+        nudgeAmountY = -evt.deltaY / 100
 
         newDurationValue =
           synth.options.granular.grainDuration + nudgeAmountX
@@ -120,6 +120,10 @@ class Editor extends Store
       copy = @data.activeEntity.path.copyTo @activeEntityLayer
       copy.strokeColor = null
 
+      # rect = new @paper.Path.Rectangle copy.bounds
+      # rect.strokeColor = 'black'
+      # @activeEntityLayer.addChild rect
+
       offset =
         @data.activeEntity.path.position.subtract @data.activeEntity.path.view.center
 
@@ -130,6 +134,8 @@ class Editor extends Store
 
       copy.translate delta
       shadowCopy.translate delta
+
+      # rect.translate delta
 
 
       @paper.view.draw()

@@ -24,7 +24,7 @@ MGInspector = React.createClass
     @setupCanvas @refs.canvas.getDOMNode()
 
   setupCanvas: (canvasNode) ->
-    @dispatch 'setupInspectorCanvas', canvasNode: canvasNode
+    @dispatch 'setupInspectorCanvas', canvas: canvasNode
 
   render: () ->
     <canvas className={"mg-inspector-canvas " + if @props.hidden then 'hidden' else 'visible'}
@@ -60,7 +60,7 @@ MGInspector = React.createClass
     #   zIndex: 2
 
     ratio = 1.77 # 16:9 fo lyfe
-    margin = 0.2
+    margin = 0.3
 
     maxWidth = @_screenDimensions().width * (1 - margin)
     maxHeight = @_screenDimensions().height * (1 - margin)

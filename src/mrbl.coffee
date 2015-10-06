@@ -62,19 +62,18 @@ class App
         editingEntity: null
 
     view.render @state, dispatcher
+    @element = view.element
 
 class MainView
-  constructor: (@container, @rootElement, @stateToParameters) ->
-    if not @stateToParameters?
-      @stateToParameters = (state, dispatcher) ->
-        state: state
-        dispatcher: dispatcher
+  constructor: (@container, @rootElement, @initialProps = {}) ->
 
   render: (state, dispatcher) ->
-    props = @stateToParameters state, dispatcher
+    @element = React.createElement @rootElement, @initialProps
+
     React.render \
-      (React.createElement @rootElement, props),
+      @element,
       @container
+
 
 sp = new SynthPool
   voices: 3
@@ -84,5 +83,25 @@ sp.output.connect k.AudioContext.destination
 # dispatcher.register 'MGField', new MGFieldDelegate()
 
 container = document.getElementById 'container'
-view = new MainView container, MGApp
+bcr = container.getBoundingClientRect()
+
+dim =
+  width: bcr.width - 80
+  height: bcr.height - 80
+
+view = new MainView container, MGApp, dim
+
 app = new App null, dispatcher, view
+
+# canvas.setAttribute 'width', bcr.width - 80
+# canvas.setAttribute 'height', bcr.height - 80
+
+
+# container = document.getElementById 'mg-app'
+# canvas = document.getElementById 'mg-field-canvas'
+# window.addEventListener 'resize', () ->
+#   console.log 'hre'
+#   bcr = container.getBoundingClientRect()
+#   canvas.setAttribute 'width', bcr.width - 80
+#   canvas.setAttribute 'height', bcr.height - 80
+#   world.data.paper.scope.view.draw()
