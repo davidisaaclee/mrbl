@@ -13,6 +13,8 @@ class RedInspector extends InspectorBase
              'scrubberX'
              'scrubberY' ]
 
+  feedbackParameterList: () -> [ 'scrubberHeight' ]
+
   # Make a new Paper.js representation of this inspector.
   draw: (paper, size) ->
     topLeft = (new paper.Point size).negate().multiply 0.5
@@ -64,6 +66,11 @@ class RedInspector extends InspectorBase
     scrubber.opacity = 0.2
     scrubber.name = 'scrubber'
 
+    afterMousewheel = () ->
+      scrubber.opacity = 0.2
+      paper.view.draw()
+    afterMousewheelTimeoutId = null
+
     scrubber.data.onMousewheel = (evt) =>
       evt.stopPropagation()
       evt.preventDefault()
@@ -75,6 +82,16 @@ class RedInspector extends InspectorBase
       nudgeAmountY = evt.deltaY / 100
       oldValueY = @getParameter 'scrubberY'
       @setParameter 'scrubberY', oldValueY + nudgeAmountY
+
+      # magnitude =
+      #   Math.sqrt (nudgeAmountX * nudgeAmountX + nudgeAmountY * nudgeAmountY)
+      magnitude = nudgeAmountX
+      scrubber.opacity = Math.min 1, (Math.max 0, 0.2 + magnitude)
+      paper.view.draw()
+
+      if afterMousewheelTimeoutId?
+        clearTimeout afterMousewheelTimeoutId
+      afterMousewheelTimeoutId = setTimeout afterMousewheel, 100
 
     return scrubber
 

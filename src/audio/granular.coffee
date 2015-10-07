@@ -136,13 +136,8 @@ class GranularSynth
     Object.defineProperty this, 'bufferDuration',
       get: () -> s2ms @options.granular.buffer?.duration
 
-    # Object.observe @options.granular, () =>
-    #   @voices.forEach (voice) => voice.set @options.granular
-
 
   noteOn: (velocity) ->
-    console.log 'hit it!'
-
     amp = 1.0 / @voices.length
     dt = amp * @options.granular.grainDuration * @bufferDuration
     @voices.forEach (voice, idx) =>

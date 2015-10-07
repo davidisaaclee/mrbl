@@ -4,15 +4,23 @@
 Abstract class for inspectors.
 ###
 class InspectorBase extends EventEmitter
-  constructor: (parameterCallbacks = {}) ->
+  constructor: (parameterCallbacks = {}, feedbackGetters = {}) ->
     @_parameterCallbacks = parameterCallbacks
-    @_listeners = {}
+    @_feedbackGetters = feedbackGetters
 
-  parameterList: () ->
-    console.warn 'Inspector needs to override `parameterList()`.'
+
+  ## Drawing
 
   draw: (paper, size) ->
     console.warn 'Inspector needs to override `draw()`.'
+
+  remove: () ->
+    console.warn 'Inspector needs to override `remove()`.'    
+
+  ## Parameters
+
+  parameterList: () ->
+    console.warn 'Inspector needs to override `parameterList()`.'
 
   mapParameter: (paramName, getFn, setFn) ->
     @_parameterCallbacks[paramName] =
@@ -39,5 +47,26 @@ class InspectorBase extends EventEmitter
 
   removeParameterListener: (paramName, callback) ->
     @removeListener "#{paramName}Changed", callback
+
+
+  ## Visual feedback
+
+  feedbackList: () ->
+    console.warn 'Inspector needs to override `feedbackList()`.'
+
+  mapFeedbackParameter: (paramName, getFn) ->
+    @_feedbackGetters[paramName] = getFn
+
+  getFeedbackParameter: (paramName) ->
+    if @_feedbackGetters[paramName]?
+    then @_feedbackGetters[paramName]()
+    else undefined
+
+  # used internally to link a feedback parameter to a view
+  _addFeedbackListener: (paramName, callback) ->
+    # TODO
+
+  _removeFeedbackListener: (paramName, callback) ->
+    # TODO
 
 module.exports = InspectorBase
