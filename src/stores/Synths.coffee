@@ -75,14 +75,14 @@ class Synths extends Store
         @emitChange()
 
   defaultSynthOptions: () ->
-    voices: 6
+    voices: 16
     granular:
       buffer: null
       center: 0.5
-      grainDuration: 0.01
-      durationRandom: 0.005
-      deviation: 0.01
-      fadeRatio: 0.2
+      grainDuration: 0.05
+      durationRandom: 0.1
+      deviation: 0.1
+      fadeRatio: 0.3
       gain: 0.25
       detune: 0
 

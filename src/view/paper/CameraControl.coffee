@@ -1,5 +1,15 @@
 _ = require 'lodash'
 
+###
+This is currently more complex than it needs to be, since I mixed together
+camera control for operating on groups and the master viewport into the same
+functions...
+
+Camera control on groups didn't work out as planned (problem with adding
+children after transform), so we no longer need that part of the code. I'll
+get rid of it sometime.
+###
+
 
 kLeftMouseFlag = 1
 

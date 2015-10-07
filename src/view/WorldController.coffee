@@ -27,6 +27,7 @@ class WorldController
       graphic = @_makeEntityGraphic @paper, state.world.queued.entity
       @dispatch 'didRegisterEntity',
         paper:
+          scope: @paper
           path: graphic.path
           shadow: graphic.shadow
         entity: state.world.queued.entity
@@ -54,7 +55,7 @@ class WorldController
       # viewItem: @_worldGroup
       onTransform: () ->
         scope.dispatch 'didViewportTransform',
-          paper: paper
+          viewport: paper.view
 
 
 

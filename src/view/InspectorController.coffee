@@ -70,29 +70,38 @@ class InspectorController
 
   _setupSynthMapping: (inspectorModel) ->
     dispatchParameterChange = (paramName, value) =>
+      console.log 'change', paramName, value
       @dispatch 'setSynthParameter',
         synth: inspectorModel.entity.synth
         parameter:
           name: paramName
           value: value
 
-    makeGetFn = (paramName) ->
-      () -> inspectorModel.entity.synth.options.granular[paramName]
-    makeSetFn = (paramName) ->
-      (v) ->
-        dispatchParameterChange paramName, v
+    makeGetFn = (paramName, transform = _.identity) ->
+      () -> transform inspectorModel.entity.synth.options.granular[paramName]
+    makeSetFn = (paramName, transform = _.identity) ->
+      (v) -> dispatchParameterChange paramName, transform v
 
     inspectorModel.mapParameter 'scrubberX',
       (makeGetFn 'center'),
-      ((v) -> dispatchParameterChange 'center', ((v + 2) % 1))
+      (makeSetFn 'center', ((v) -> (v + 2) % 1))
 
     inspectorModel.mapParameter 'backgroundX',
-      (makeGetFn 'grainDuration'),
-      (makeSetFn 'grainDuration')
+      (makeGetFn 'grainDuration', (v) -> v / 0.1),
+      (makeSetFn 'grainDuration', (v) ->
+        v_ = v * 0.1
+
+        # in seconds
+        min = 0.05
+        max = 2
+
+        minRatio = min / inspectorModel.entity.synth.options.granular.buffer.duration
+        maxRatio = max / inspectorModel.entity.synth.options.granular.buffer.duration
+        Math.min maxRatio, (Math.max minRatio, v_))
 
     inspectorModel.mapParameter 'backgroundY',
-      (makeGetFn 'durationRandom'),
-      (makeSetFn 'durationRandom')
+      (makeGetFn 'detune', ((v) -> v / 50)),
+      (makeSetFn 'detune', ((v) -> v * 50))
 
 
   _fetchState: () ->

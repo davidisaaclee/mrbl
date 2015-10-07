@@ -4,8 +4,8 @@ WorldStore = require './World'
 
 class User extends Store
   getDefaultData: () ->
-    position: [0, 0]
-    deltaPosition: [0, 0]
+    # position: [0, 0]
+    # deltaPosition: [0, 0]
 
   delegate: (payload) ->
     data = payload?.action?.data
@@ -27,15 +27,16 @@ class User extends Store
     #     @data.position = @paper.view.center
     #     @data.deltaPosition = [0, 0]
 
-      # TODO: THIS
-      # when 'didViewportTransform'
-      #   {center, size} = data
+      when 'didViewportTransform'
+        {viewport} = data
+        @recalculateDistances viewport.center, viewport.size
+        @emitChange()
 
-      #   deltaPosition = @paper.view.center.subtract @data.position
-      #   # @data.position = @paper.view.center
-      #   # @data.deltaPosition = deltaPosition
-      #   @recalculateDistances @paper.view.center, @paper.view.size
-      #   @emitChange()
+      when 'didRegisterEntity'
+        {paper: {scope}} = data
+        viewport = scope.view
+        @recalculateDistances viewport.center, viewport.size
+        @emitChange()
 
 
   recalculateDistances: (fromPoint, withinBox) ->
@@ -43,7 +44,7 @@ class User extends Store
     distanceInfo = _ WorldStore.data.entities
       .values()
       .map (entity) ->
-        nearestPt = entity.path.getNearestPoint fromPoint
+        nearestPt = entity.paper.path.getNearestPoint fromPoint
 
         distance: fromPoint.getDistance nearestPt
         entity: entity

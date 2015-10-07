@@ -33,21 +33,22 @@ MGApp = React.createClass
     EditorStore.addChangeListener @_onChange
     UserStore.addChangeListener @_onChange
 
-    @setupCanvas @refs.canvas.getDOMNode()
-    @setupInspector @refs.inspector.getDOMNode()
+    @fieldPaperScope = @setupField @refs.canvas.getDOMNode()
+    @inspectorPaperScope = @setupInspector @refs.inspector.getDOMNode()
 
-  setupCanvas: (canvasNode) ->
-    @_paper = new Paper.PaperScope()
-    @_paper.setup canvasNode
+  setupField: (canvasNode) ->
+    fieldPaper = new Paper.PaperScope()
+    fieldPaper.setup canvasNode
 
-    (new WorldController()).attach @_paper
-    # (new InspectorController()).attach @_paper
+    (new WorldController()).attach fieldPaper
+    return fieldPaper
 
   setupInspector: (canvasNode) ->
     inspectorPaper = new Paper.PaperScope()
     inspectorPaper.setup canvasNode
 
     (new InspectorController()).attach inspectorPaper
+    return inspectorPaper
 
 
 
@@ -61,12 +62,12 @@ MGApp = React.createClass
     evt.preventDefault()
 
     file = evt.dataTransfer.files[0]
-    pt = new @_paper.Point evt.clientX, evt.clientY
+    pt = new @fieldPaperScope.Point evt.clientX, evt.clientY
 
     if file?
       @dispatch 'wantsAddEntity',
         file: file
-        position: @_paper.view.viewToProject pt
+        position: @fieldPaperScope.view.viewToProject pt
 
   render: () ->
     <div id="mg-app"
