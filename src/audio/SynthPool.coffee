@@ -7,7 +7,7 @@ SynthStore = require '../stores/Synths'
 class SynthPool
   constructor: (options = {}) ->
     SynthStore.addChangeListener () =>
-      @_update SynthStore.getAll()
+      @update SynthStore.getAll()
 
     @options = _.defaults options,
       voices: 4
@@ -28,6 +28,17 @@ class SynthPool
         voice.synth.output.connect voice.gain
         voice.gain.connect @output
 
+  update: (state) ->
+    _ state.synths
+      .take @options.voices
+      .value()
+      .forEach (synth) =>
+        v = _.find @voices, (voice) ->
+          voice.id is synth.id
+        if v?
+          @_updateVoice v, synth
+        else
+          @pushSynth synth, synth.level
 
   pushSynth: (synth, priority) ->
     bottom = (_.sortBy @voices, 'priority')[0]
@@ -74,18 +85,6 @@ class SynthPool
 
   noteOn: (voiceIdx, velocity) ->
     @voices[voiceIdx]?.synth?.noteOn velocity
-
-  _update: (state) ->
-    _ state.synths
-      .take @options.voices
-      .value()
-      .forEach (synth) =>
-        v = _.find @voices, (voice) ->
-          voice.id is synth.id
-        if v?
-          @_updateVoice v, synth
-        else
-          @pushSynth synth, synth.level
 
   _updateVoice: (voice, synth) ->
     voice.synth.set synth.options

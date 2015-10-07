@@ -5,6 +5,16 @@ WorldStore = require './World'
 # SynthPool = require '../audio/SynthPool'
 k = require '../Constants'
 
+DEFAULT_BUFFER = null
+do ->
+  request = new XMLHttpRequest()
+  request.open 'GET', './dist/sounds/hen.wav', true
+  request.responseType = 'arraybuffer'
+  request.onload = () ->
+    k.AudioContext.decodeAudioData request.response, (buffer) =>
+      DEFAULT_BUFFER = buffer
+  request.send()
+
 class Synths extends Store
   getDefaultData: () ->
     synths: []
@@ -16,17 +26,35 @@ class Synths extends Store
       when 'didAddEntity'
         {entity} = data
         entity.synth =
-          id: entity.entityId
+          id: entity.id
           level: 0
           options: @defaultSynthOptions()
         Object.defineProperty entity.synth, 'needsFile',
           get: () -> not entity.synth.options.granular.buffer?
+
+      when 'wantsLoadSoundFile'
+        {entity, file} = data
+
+        reader = new FileReader()
+        reader.onload = (evt) =>
+          data = evt.target.result
+          k.AudioContext.decodeAudioData data, (buffer) =>
+            @dispatch 'loadBufferIntoEntity',
+              buffer: buffer
+              entity: entity
+
+          @emitChange()
+        reader.readAsArrayBuffer data.file
 
       when 'loadBufferIntoEntity'
         {buffer, entity} = data
         if not entity.synth?
           console.log 'entity has no synth', entity
           debugger
+
+        # for debug mostly
+        if not buffer?
+          buffer = DEFAULT_BUFFER
 
         @loadBuffer buffer, entity.synth
         entity.synth.needsFile = false

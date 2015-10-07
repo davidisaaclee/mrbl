@@ -1,25 +1,39 @@
+_ = require 'lodash'
+
 
 kLeftMouseFlag = 1
 
-module.exports = cameraControlTool = (paper, tool, canvas, onTransform) ->
-  if not onTransform?
-    onTransform = ->
+module.exports = cameraControlTool = (paper, tool, canvas, options) ->
+  options = _.defaults options,
+    onTransform: _.identity
+    viewItem: paper.view
 
-  setupZoom paper, tool, canvas, onTransform
-  setupPan paper, tool, canvas, onTransform
+  setupZoom paper, tool, canvas, options
+  setupPan paper, tool, canvas, options
 
-setupZoom = (paper, tool, canvas, onTransform) ->
+setupZoom = (paper, tool, canvas, options) ->
   zoom = (amount, pt) ->
-    scrollAmount = paper.view.center.subtract pt
+    getZoom =
+      if options.viewItem.zoom?
+      then () -> options.viewItem.zoom
+      else () -> options.viewItem.scaling.x
+    setZoom =
+      if options.viewItem.zoom?
+      then (amt, center) ->
+        scrollAmount = options.viewItem.center.subtract center
+        options.viewItem.scrollBy scrollAmount
+        zoomDelta = amt / options.viewItem.zoom
+        options.viewItem.zoom = amt
+        options.viewItem.scrollBy scrollAmount.negate().multiply zoomDelta
+      else (amt, center) ->
+        options.viewItem.scale [1 / amt, 1 / amt], center
 
-    newZoom = paper.view.zoom * amount
+    newZoom = getZoom() * amount
     newZoom = Math.max (Math.min newZoom, 5), 0.5
 
-    if newZoom != paper.view.zoom
-      paper.view.scrollBy scrollAmount
-      paper.view.zoom = newZoom
-      paper.view.scrollBy scrollAmount.negate().multiply amount
-      do onTransform
+    if newZoom != getZoom()
+      setZoom newZoom, pt
+      do options.onTransform
 
   canvas.addEventListener 'mousewheel', (evt) ->
     evt.stopPropagation()
@@ -49,7 +63,7 @@ setupZoom = (paper, tool, canvas, onTransform) ->
       zoom 1 + 2 * deltaX / paper.view.viewSize.width, paper.view.center
 
 
-setupPan = (paper, tool, canvas, onTransform) ->
+setupPan = (paper, tool, canvas, options) ->
   panInertia = new paper.Point 0, 0
   lastScroll = new paper.Point 0, 0
 
@@ -84,12 +98,25 @@ setupPan = (paper, tool, canvas, onTransform) ->
       panInertia = delta
 
   decay = 0.8
+
+  setCenter =
+    if options.viewItem.center?
+    then (pt) -> options.viewItem.center = pt
+    else (pt) ->
+      delta = options.viewItem.position.subtract pt
+      options.viewItem.position = delta.add options.viewItem.position
+  getCenter =
+    if options.viewItem.center?
+    then () -> options.viewItem.center
+    else () -> options.viewItem.position
+
   paper.view.on 'frame', (evt) ->
     if panInertia.length > 0.01
-      paper.view.center = paper.view.center.add panInertia
+      # options.viewItem.center = options.viewItem.center.add panInertia
+      setCenter (getCenter().add panInertia)
       if not paper.Key.isDown 'option'
         # panInertia = panInertia.multiply (60 * decay * evt.delta)
         delta = (panInertia.multiply decay).subtract panInertia
         delta.multiply evt.delta
         panInertia = panInertia.add delta
-      do onTransform
+      do options.onTransform

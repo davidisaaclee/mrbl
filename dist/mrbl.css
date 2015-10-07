@@ -32,16 +32,17 @@ body {
   position: absolute;
   left: 0;
   top: 0;
+  z-index: 0;
 }
-.mg-inspector-canvas {
-  -webkit-transition: all 1s;
-          transition: all 1s;
+.mg-inspector {
+  -webkit-transition: all 0.5s;
+          transition: all 0.5s;
 }
-.mg-inspector-canvas.visible {
-  z-index: 2;
+.mg-inspector.visible {
   opacity: 1;
+  z-index: 2;
 }
-.mg-inspector-canvas.hidden {
-  z-index: -1;
+.mg-inspector.hidden {
   opacity: 0;
+  z-index: -1;
 }

@@ -14,9 +14,11 @@ class World extends Store
 
   getDefaultData: () ->
     entities: {}
-    paper:
-      layers: {}
-      scope: null
+    # paper:
+    #   layers: {}
+    #   scope: null
+    queued:
+      entity: null
 
   getEntity: (id) ->
     if id?
@@ -33,33 +35,55 @@ class World extends Store
 
       when 'wantsAddEntity'
         entity = @makeNewEntity data.position
-        @dispatch 'didAddEntity', entity: entity
-        @dispatch 'wantsEditEntity', id: entity.entityId
+
+        @dispatch 'wantsRegisterEntity',
+          entity: entity
+
         if data.file?
-          @dispatch 'wantsLoadSoundFile', file: data.file
+          @dispatch 'wantsLoadSoundFile',
+            entity: entity
+            file: data.file
+
+        # temporary: load default if no file
+        else
+          @dispatch 'loadBufferIntoEntity',
+            entity: entity
+            buffer: null
+
+      when 'wantsRegisterEntity'
+        @data.queued.entity = data.entity
         @emitChange()
 
-      when 'didMouseEnterEntity'
-        entity = @data.entities[data.entityId]
-        if entity?
-          @handleMouseHoverEntity entity, 'enter'
-          @emitChange()
+      when 'didRegisterEntity'
+        {entity, paper} = data
+        @data.queued.entity = null
+        @data.entities[entity.id] = entity
+        @data.entities[entity.id].paper = paper
+        @dispatch 'didAddEntity',
+          entity: entity
+        @emitChange()
 
-      when 'didMouseExitEntity'
-        entity = @data.entities[data.entityId]
-        if entity?
-          @handleMouseHoverEntity entity, 'exit'
-          @emitChange()
+      # when 'didMouseEnterEntity'
+      #   entity = @data.entities[data.entityId]
+      #   if entity?
+      #     @handleMouseHoverEntity entity, 'enter'
+      #     @emitChange()
 
-      when 'wantsEditEntity'
-        {id} = data
-        entity = @getEntity id
-        if entity?
-          @focusOnItem entity.path, [0, entity.path.bounds.height * 0.1]
-            .then () =>
-              @dispatch 'didBeginEditEntity', entity: entity
-        else
-          console.error 'editing nonexistant entity', id
+      # when 'didMouseExitEntity'
+      #   entity = @data.entities[data.entityId]
+      #   if entity?
+      #     @handleMouseHoverEntity entity, 'exit'
+      #     @emitChange()
+
+      # when 'wantsEditEntity'
+      #   {id} = data
+      #   entity = @getEntity id
+      #   if entity?
+      #     @focusOnItem entity.path, [0, entity.path.bounds.height * 0.1]
+      #       .then () =>
+      #         @dispatch 'didBeginEditEntity', entity: entity
+      #   else
+      #     console.error 'editing nonexistant entity', id
 
       when 'wantsFocusOnItem'
         {item, offset} = data
@@ -72,30 +96,25 @@ class World extends Store
   makeNewEntity: (position) ->
     id = "entity-#{@entityCount++}"
 
-    path = @_makePaperEntity id, position
-    shadow = @_makeShadow path
-
-    @data.paper.layers.entities.addChild path
-    @data.paper.layers.shadows.addChild shadow
-
-    @data.entities[id] =
-      path: path
-      shadow: shadow
-      entityId: id
+    entity =
+      id: id
+      position: position
+    return entity
 
 
-  setupCanvas: (canvas) ->
-    @paper = new Paper.PaperScope()
-    @paper.setup canvas
 
-    @data.paper.scope = @paper
+  # setupCanvas: (canvas) ->
+  #   @paper = new Paper.PaperScope()
+  #   @paper.setup canvas
 
-    @data.paper.layers.shadows = new Paper.Layer()
-    @data.paper.layers.entities = new Paper.Layer()
+  #   @data.paper.scope = @paper
 
-    @dispatch 'didSetupWorldCanvas',
-      canvas: canvas
-      paper: @data.paper.scope
+  #   @data.paper.layers.shadows = new Paper.Layer()
+  #   @data.paper.layers.entities = new Paper.Layer()
+
+  #   @dispatch 'didSetupWorldCanvas',
+  #     canvas: canvas
+  #     paper: @data.paper.scope
 
   focusOnItem: (item, offset = [0, 0], zoomFactor = 0.4) ->
     view = item.project.view
@@ -179,71 +198,71 @@ class World extends Store
 
       view.on 'frame', animateZoomFrame
 
-  handleMouseHoverEntity: do ->
-    reset = null
-    return (entity, state) ->
-      switch state
-        when 'enter'
-          if reset?
-            do reset
+  # handleMouseHoverEntity: do ->
+  #   reset = null
+  #   return (entity, state) ->
+  #     switch state
+  #       when 'enter'
+  #         if reset?
+  #           do reset
 
-          setStrokeWidth = () =>
-            entity.path.strokeWidth = 3 * 1 / @data.paper.scope.view.zoom
-          @_fixedEltUpdates[entity.id] = setStrokeWidth
+  #         setStrokeWidth = () =>
+  #           entity.path.strokeWidth = 3 * 1 / @data.paper.scope.view.zoom
+  #         @_fixedEltUpdates[entity.id] = setStrokeWidth
 
-          oldColor = entity.path.strokeColor
-          oldWidth = entity.path.strokeWidth
+  #         oldColor = entity.path.strokeColor
+  #         oldWidth = entity.path.strokeWidth
 
-          reset = () =>
-            entity.path.strokeColor = oldColor
-            entity.path.strokeWidth = oldWidth
-            delete @_fixedEltUpdates[entity.id]
+  #         reset = () =>
+  #           entity.path.strokeColor = oldColor
+  #           entity.path.strokeWidth = oldWidth
+  #           delete @_fixedEltUpdates[entity.id]
 
-          entity.path.strokeColor = '#4181FF'
-          do setStrokeWidth
+  #         entity.path.strokeColor = '#4181FF'
+  #         do setStrokeWidth
 
-        when 'exit'
-          if reset?
-            do reset
+  #       when 'exit'
+  #         if reset?
+  #           do reset
 
   _updateFixedElements: () ->
     _.values @_fixedEltUpdates
       .forEach (fn) -> do fn
 
 
-  _makePaperEntity: (id, position) ->
-    if not position?
-      position = @state.paper.scope.view.center
+  # _makePaperEntity: (id, position) ->
+  #   if not position?
+  #     position = @state.paper.scope.view.center
 
-    randomColor = (options = {}) ->
-      options = _.defaults options,
-        hue: Math.random() * 360
-        saturation: Math.random()
-        brightness: Math.random()
+  #   randomColor = (options = {}) ->
+  #     options = _.defaults options,
+  #       hue: Math.random() * 360
+  #       saturation: Math.random()
+  #       brightness: Math.random()
 
-      new Paper.Color options
+  #     new Paper.Color options
 
-    item = makeRandomPath @paper,
-      left: 0
-      top: 0
-      width: Math.random() * 450 + 50
-      height: Math.random() * 450 + 50
-    item.position = position
-    item.fillColor =
-      gradient:
-        stops: [ randomColor {brightness: 0.8}
-                 randomColor {brightness: 0.8} ]
-      origin: item.bounds.topLeft
-      destination: item.bounds.bottomRight
-    item.data.entityId = id
+  #   item = makeRandomPath @paper,
+  #     left: 0
+  #     top: 0
+  #     width: Math.random() * 450 + 50
+  #     height: Math.random() * 450 + 50
+  #   item.position = position
+  #   item.fillColor =
+  #     gradient:
+  #       stops: [ randomColor {brightness: 0.8}
+  #                randomColor {brightness: 0.8} ]
+  #     origin: item.bounds.topLeft
+  #     destination: item.bounds.bottomRight
+  #   item.data.entityId = id
 
-    return item
+  #   return item
 
-  _makeShadow: (path) ->
-    r = path.clone()
-    r.fillColor = 'black'
-    r.opacity = 0.6
-    r.translate [30, 30]
-    return r
+  # _makeShadow: (path) ->
+  #   r = path.clone()
+  #   r.fillColor = 'black'
+  #   r.opacity = 0.6
+  #   r.translate [30, 30]
+  #   return r
 
 module.exports = new World()

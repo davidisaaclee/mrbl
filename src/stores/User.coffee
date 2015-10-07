@@ -11,19 +11,31 @@ class User extends Store
     data = payload?.action?.data
 
     switch payload?.action?.actionType
-      when 'didSetupWorldCanvas'
-        {canvas, paper} = data
-        console.log paper
-        @data.position = paper.view.center
-        @data.deltaPosition = [0, 0]
+      when 'wantsEditEntity'
+        {id} = data
+        entity = WorldStore.getEntity id
+        if entity?
+          @dispatch 'didBeginEditEntity', entity: entity
+        #   @focusOnItem entity.path, [0, entity.path.bounds.height * 0.1]
+        #     .then () =>
+        #       @dispatch 'didBeginEditEntity', entity: entity
+        # else
+        #   console.error 'editing nonexistant entity', id
 
-      when 'didViewportTransform', 'didAddEntity'
-        paper = WorldStore.data.paper.scope
-        deltaPosition = paper.view.center.subtract @data.position
-        @data.position = paper.view.center
-        @data.deltaPosition = deltaPosition
-        @recalculateDistances paper.view.center, paper.view.size
-        @emitChange()
+    #   when 'didSetupWorldCanvas'
+    #     {canvas, @paper} = data
+    #     @data.position = @paper.view.center
+    #     @data.deltaPosition = [0, 0]
+
+      # TODO: THIS
+      # when 'didViewportTransform'
+      #   {center, size} = data
+
+      #   deltaPosition = @paper.view.center.subtract @data.position
+      #   # @data.position = @paper.view.center
+      #   # @data.deltaPosition = deltaPosition
+      #   @recalculateDistances @paper.view.center, @paper.view.size
+      #   @emitChange()
 
 
   recalculateDistances: (fromPoint, withinBox) ->

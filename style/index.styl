@@ -26,18 +26,19 @@ body
   position absolute
   left 0
   top 0
+  z-index 0
   // width 100vw
   // height 100vh
 
-.mg-inspector-canvas
-  transition all 1s
+.mg-inspector
+  transition all 0.5s
 
-.mg-inspector-canvas.visible
+.mg-inspector.visible
   // display initial
-  z-index 2
   opacity 1
+  z-index 2
 
-.mg-inspector-canvas.hidden
+.mg-inspector.hidden
   // display none
-  z-index -1
   opacity 0
+  z-index -1

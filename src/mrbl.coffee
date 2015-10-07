@@ -1,19 +1,18 @@
 _ = require 'lodash'
 React = require 'react'
 
-Sampler = require './audio/sampler'
-{Envelope, TriggerEnvelope} = require './audio/envelope'
-GranularSynth = require './audio/granular'
+# Sampler = require './audio/sampler'
+# {Envelope, TriggerEnvelope} = require './audio/envelope'
+# GranularSynth = require './audio/granular'
 
-MGControls = require './view/MGControls'
 MGApp = require './view/MGApp'
-
 SynthPool = require './audio/SynthPool'
 
 k = require './Constants'
 
 dispatcher = require './Dispatcher'
-world = require './stores/World'
+
+require './stores/World'
 require './stores/Synths'
 require './stores/User'
 
@@ -51,57 +50,19 @@ require './stores/User'
 #     synth.noteOn 1
 
 
-
-
-class App
-  constructor: (initialState = {}, @dispatcher, view) ->
-    @state = _.defaultsDeep initialState,
-      world:
-        entities: {}
-      user:
-        editingEntity: null
-
-    view.render @state, dispatcher
-    @element = view.element
-
-class MainView
-  constructor: (@container, @rootElement, @initialProps = {}) ->
-
-  render: (state, dispatcher) ->
-    @element = React.createElement @rootElement, @initialProps
-
-    React.render \
-      @element,
-      @container
-
-
 sp = new SynthPool
   voices: 3
-
 sp.output.connect k.AudioContext.destination
 
-# dispatcher.register 'MGField', new MGFieldDelegate()
-
 container = document.getElementById 'container'
-bcr = container.getBoundingClientRect()
 
+bcr = container.getBoundingClientRect()
 dim =
   width: bcr.width - 80
   height: bcr.height - 80
 
-view = new MainView container, MGApp, dim
 
-app = new App null, dispatcher, view
+initialProps = dim
 
-# canvas.setAttribute 'width', bcr.width - 80
-# canvas.setAttribute 'height', bcr.height - 80
-
-
-# container = document.getElementById 'mg-app'
-# canvas = document.getElementById 'mg-field-canvas'
-# window.addEventListener 'resize', () ->
-#   console.log 'hre'
-#   bcr = container.getBoundingClientRect()
-#   canvas.setAttribute 'width', bcr.width - 80
-#   canvas.setAttribute 'height', bcr.height - 80
-#   world.data.paper.scope.view.draw()
+view = React.createElement MGApp, initialProps
+React.render view, container
