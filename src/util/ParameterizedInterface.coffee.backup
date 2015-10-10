@@ -1,0 +1,53 @@
+# Parameter = require './Parameter'
+
+# # Describes a class which offers an interface via `Parameter`s.
+# class ParameterizedInterface
+#   constructor: () ->
+#     @_parameters = {}
+
+#     for name, options of @defaultParameters
+#       @_parameters[name] = new Parameter name, options.value
+#       if options.observer?
+#         @_parameters[name].subscribe options.observer
+
+
+#   ###
+#   @property defaultParameters [{<parameterName>: ParamOptions}]
+#   Override this in subclasses of `ParameterizedInterface` to initialize
+#     `Parameter`s.
+
+#   ParamOptions ::=
+#     # The default value for this parameter. Default: 0
+#     value: Number
+#     # Optional: A function to be called when this parameter changes.
+#     observer: Function
+#     # # Scaling range for this parameter.
+#     # scale: [Number, Number] | [[Number, Number], [Number, Number]]
+#     # # Clamping range for this parameter.
+#     # clamp: [Number, Number]
+#   ###
+#   defaultParameters: {}
+
+#   getAllParametersRaw: () ->
+#     _.mapValues @_parameters, (p, name) =>
+#       @getParameter name, true
+
+#   setAllParametersRaw: (values) ->
+#     for name, value of values
+#       @setParameter name, value, true
+
+#   getParameter: (name, isRaw = false) ->
+#     if isRaw
+#       @_parameters[name]?.parameter.get()
+#     else
+#       @_parameters[name]?.parameter.get @_parameters[name].scale
+
+#   setParameter: (name, value, isRaw = false) ->
+#     if isRaw
+#       @_parameters[name]?.parameter.set value
+#     else
+#       @_parameters[name]?.parameter.set value,
+#         @_parameters[name].clamp,
+#         @_parameters[name].scale
+
+#   subscribeParameter: (callback) ->

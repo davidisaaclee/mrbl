@@ -4,7 +4,7 @@
   "description": "spatial audio playground",
   "main": "mrbl.js",
   "scripts": {
-    "build-js-vendor": "browserify -r react -r lodash -o dist/vendor.js",
+    "build-js-vendor": "browserify -r react -r lodash -r rx -o dist/vendor.js",
     "build-js": "browserify -x react -x lodash src/mrbl.coffee -o dist/mrbl.js -t coffee-reactify --extension=\".coffee\" --extension=\".cjsx\"",
     "watch-js": "watchify -x react -x lodash src/mrbl.coffee -o dist/mrbl.js -t coffee-reactify --extension=\".coffee\" --extension=\".cjsx\" -dv",
     "build-css": "stylus -u autoprefixer-stylus style/index.styl --out dist/mrbl.css",
@@ -31,6 +31,7 @@
     "object.observe": "^0.2.4",
     "oo-eventtarget": "0.0.3",
     "paper": "^0.9.24",
-    "react": "^0.13.3"
+    "react": "^0.13.3",
+    "rx": "^4.0.1"
   }
 }

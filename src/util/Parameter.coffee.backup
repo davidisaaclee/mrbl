@@ -1,0 +1,108 @@
+_ = require 'lodash'
+
+clamp = (min, max) -> (v) -> Math.min max, (Math.max min, v)
+
+scale = (inLow, inHigh, outLow, outHigh) -> (v) -> (v - low) * (high - low)
+
+parseScale = (range) ->
+  cookedScale = null
+  if range?
+    if (_.isArray range) and range.length is 2
+      if _.all range, (elm) -> _.isArray elm
+        if _.all range, (elm) -> elm.length is 2
+          return range
+        else
+          console.error 'Invalid scale range', range
+      else
+        if _.all range, (elm) -> _.isNumber elm
+          return [[0, 1], range]
+        else
+          console.error 'Invalid scale range', range
+    else
+      console.error 'Invalid scale range', range
+
+
+class Parameter
+  constructor: (@name, defaultValue = 0) ->
+    @value = defaultValue
+
+    callbackCount = 0
+    @_nextCallbackId = () -> "cb-#{callbackCount++}"
+
+  subscribe: (callback, options) ->
+    options = _.defaults options,
+      # should this callback be invoked immediately with the most recent value?
+      shouldPrime: false
+      # a function to transform the value before sending to callback
+      transform: _.identity
+
+    id = @_nextCallbackId()
+    @_callbacks[id] = (v) -> callback (options.transform v)
+    if options.shouldPrime
+      callback options.transform @value
+
+    return () => delete @_callbacks[id]
+
+  ###
+  @param value [Number] The raw new value for this parameter.
+  @param options [Object] Options for transforming the value.
+
+  # these are now fields of `options`
+  clamp [Array<Number>] A 2-element array consisting of the max and min
+    values of this parameter for this set action. If `null` or `undefined`,
+    performs no clamping.
+  scale [Array<Number> | Array<Array<Number>>] Either a 2-element array
+    of 2-element arrays, denoting [[inLow, inHigh], [outLow, outHigh]]; or a
+    2-element array of numbers, denoting [outLow, outHigh] for a normalized
+    (0-1) value. If `null` or `undefined`, performs no scaling.
+  ###
+  set: (value, options) ->
+    cooked = value
+
+    if options.clamp?
+      if (_.isArray options.clamp) and (options.clamp.length is 2)
+        cooked = clamp options.clamp[0], options.clamp[1]
+      else
+        console.error 'Invalid clamp range', options.clamp
+
+    if options.scale?
+      cookedScale = parseScale options.scale
+      if cookedScale?
+        cooked = scale cooked,
+          cookedScale[0][0],
+          cookedScale[0][1],
+          cookedScale[1][0],
+          cookedScale[1][1]
+
+    if options.transform?
+      cooked = options.transform cooked
+
+    @value = cooked
+
+
+  ###
+  @param options [Object] Options for transforming the value.
+
+  unscale [Array<Number> | Array<Array<Number>>] Same format as the
+    `scale` parameter of the `set()` method, but will reverse the scaling
+    procedure.
+  ###
+  get: (unscale) ->
+    cooked = @value
+
+    if options.unscale?
+      cookedScale = parseScale options.unscale
+      if cookedScale?
+        cooked = scale cooked,
+          cookedScale[1][0],
+          cookedScale[1][1],
+          cookedScale[0][0],
+          cookedScale[0][1]
+
+    if options.transform?
+      cooked = options.transform cooked
+
+    return cooked
+
+
+module.exports = Parameter

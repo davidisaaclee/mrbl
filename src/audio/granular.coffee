@@ -13,12 +13,12 @@ class GranularVoice
   constructor: (@audioContext, options = {}) ->
     @options = _.defaults options,
       buffer: null
-      center: 0.5
-      grainDuration: 0.1
-      durationRandom: 0.1
-      deviation: 0.1
+      center: 0.5 # relative to buffer duration
+      grainDuration: 300
+      durationRandom: 150
+      deviation: 150
       gain: 0.7
-      fadeRatio: 0.1
+      fadeRatio: 0.1 # relative to grain duration
       detune: 0
 
     @sampler = new Sampler @audioContext, @options.buffer
@@ -39,7 +39,7 @@ class GranularVoice
       @sampler.output.disconnect()
       @sampler = new Sampler @audioContext, @options.buffer
       @sampler.output.connect @envelope.input
-      @noteOn 1
+      # @noteOn 1
 
     @options = _.assign @options, options
 
@@ -60,7 +60,7 @@ class GranularVoice
     @_unsubRelease = () =>
       @envelope.removeEventListener 'released', restart
 
-    do @_willTriggerGrain velocity
+    do restart
 
 
   noteOff: () ->
@@ -87,14 +87,15 @@ class GranularVoice
     @sampler.noteOn velocity
     @envelope.noteOn velocity
 
+    offset: offset
+    duration: duration
+
 
   _pickGrain: () ->
-    maxDuration = @bufferDuration
-    # maxDuration = 3000
     if @options.buffer?
-      deviation = Math.random() * @options.deviation * maxDuration
-      duration = @options.grainDuration * maxDuration
-      durationRandom = Math.random() * @options.durationRandom * duration
+      deviation = Math.random() * @options.deviation
+      duration = @options.grainDuration
+      durationRandom = Math.random() * @options.durationRandom
       duration += durationRandom
 
       offset: @options.center * @bufferDuration - (duration / 2) + deviation
@@ -106,29 +107,24 @@ class GranularVoice
 
 
 class GranularSynth
-  constructor: (audioContext, options = {}) ->
+  constructor: (@audioContext, options = {}) ->
     @options = _.defaultsDeep options,
       voices: 3
       granular:
         buffer: null
         center: 0.5
-        grainDuration: 0.1
-        durationRandom: 0.05
-        deviation: 0.1
-        fadeRatio: 0.1
+        grainDuration: 300
+        durationRandom: 150
+        deviation: 150
+        fadeRatio: 0.25
         gain: if options.voices? then (1 / options.voices) else 1/3
         detune: 0
 
-    @envelope = new Envelope audioContext,
+    @envelope = new Envelope @audioContext,
       attack: 0
       release: 0
 
-    @voices = [0...@options.voices].map () =>
-      s = new GranularVoice audioContext, @options.granular
-      s.output.connect @envelope.input
-      return s
-
-    @_triggerTimingManager = new TimeoutManager()
+    @voices = [0...@options.voices].map () => @_makeVoice()
 
     Object.defineProperty this, 'output',
       get: () -> @envelope.output
@@ -136,20 +132,36 @@ class GranularSynth
     Object.defineProperty this, 'bufferDuration',
       get: () -> s2ms @options.granular.buffer?.duration
 
-
   noteOn: (velocity) ->
-    amp = 1.0 / @voices.length
-    dt = amp * @options.granular.grainDuration * @bufferDuration
-    @voices.forEach (voice, idx) =>
-      @_triggerTimingManager.setTimeout (dt * idx), () ->
-        voice.noteOn amp
+    voiceAmp = 1.0 / @voices.length
+    freeVoices = @voices.slice()
+
+    attemptTriggerVoice = () =>
+      hd = freeVoices.shift()
+      if hd?
+        freeMe = () ->
+          hd.envelope.removeEventListener 'released', freeMe
+          freeVoices.push hd
+        hd.envelope.addEventListener 'released', freeMe
+        return (do hd._willTriggerGrain voiceAmp).duration
+      else
+        return -1
+
+    triggerAndWait = () =>
+      duration = do attemptTriggerVoice
+      waitTilNext =
+        if duration is -1
+        then @options.grainDuration / @voices.length
+        else duration / @voices.length
+      @_noteTimeout = setTimeout triggerAndWait, waitTilNext
+    triggerAndWait()
     @envelope.noteOn velocity
 
   noteOff: () ->
-    @_triggerTimingManager.clearAll()
+    if @_noteTimeout
+      clearTimeout @_noteTimeout
 
-    @voices.forEach (voice) ->
-      voice.noteOff()
+    @voices.forEach (voice) -> voice.noteOff()
     @envelope.noteOff()
 
   parameters: () ->
@@ -194,28 +206,23 @@ class GranularSynth
     _.values @parameters()
 
   set: (options) ->
-    # if options.granular.buffer? and options.granular.buffer isnt @options.granular.buffer
-    #   @noteOff()
+    if options.voices?
+      while @voices.length isnt options.voices
+        if @voices.length > options.voices
+          @voices[@voices.length - 1].noteOff()
+          @voices.splice (@voices.length - 1), 1
+        else if @voices.length < options.voices
+          @voices.push @_makeVoice()
 
-    granularOptions = _.assign @options.granular, options.granular
+
     @options = _.assign @options, options
+    granularOptions = _.assign @options.granular, options.granular
     @options.granular = granularOptions
     @voices.forEach (voice) => voice.set options.granular
 
-  # setBuffer: (@buffer) ->
-  #   @options = _.defaultsDeep @options,
-  #     voices: 3
-  #     granular:
-  #       center: 0.5
-  #       grainDuration: 0.1
-  #       durationRandom: 0.1
-  #       deviation: 0.1
-  #       fadeRatio: 0.1
-  #       gain: if @options.voices? then (1 / @options.voices) else 0
-  #       detune: 0
-
-  #   @noteOff()
-  #   @voices.forEach (voice) =>
-  #     voice.setBuffer @buffer
+  _makeVoice: () ->
+    s = new GranularVoice @audioContext, @options.granular
+    s.output.connect @envelope.input
+    return s
 
 module.exports = GranularSynth

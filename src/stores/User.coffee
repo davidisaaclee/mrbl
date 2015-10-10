@@ -4,8 +4,8 @@ WorldStore = require './World'
 
 class User extends Store
   getDefaultData: () ->
-    # position: [0, 0]
-    # deltaPosition: [0, 0]
+    position: null
+    deltaPosition: [0, 0]
 
   delegate: (payload) ->
     data = payload?.action?.data
@@ -22,13 +22,15 @@ class User extends Store
         # else
         #   console.error 'editing nonexistant entity', id
 
-    #   when 'didSetupWorldCanvas'
-    #     {canvas, @paper} = data
-    #     @data.position = @paper.view.center
-    #     @data.deltaPosition = [0, 0]
-
       when 'didViewportTransform'
         {viewport} = data
+
+        @data.deltaPosition =
+          if @data.position?
+          then viewport.center.subtract @data.position
+          else [0, 0]
+        @data.position = viewport.center
+
         @recalculateDistances viewport.center, viewport.size
         @emitChange()
 

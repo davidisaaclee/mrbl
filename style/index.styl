@@ -1,26 +1,41 @@
-body
+body, html
   padding 0
   margin 0
   left 0
   top 0
-  // overflow hidden
 
-#container
-  box-sizing border-box
-  padding 40px
+  width 100%
+  height 100%
+
+#frame
   background-color black
-  width 100vw
-  height 100vh
-
-.mg-app
-  // box-sizing border-box
-  position relative
+  height 100%
+  width 100%
+  
   display flex
   align-items center
   justify-content center
+
+  #container
+    box-sizing border-box
+    background-color blue
+    margin 10px
+    
+    // i have no idea why 100% fills height
+      // (without accounting for vertical margin)
+    height 90%
+    width 100%
+
+.mg-app
+  box-sizing border-box
+  position relative
+
+  display flex
+  align-items center
+  justify-content center
+
   height 100%
   width 100%
-
 
 .mg-field
   position absolute
@@ -38,3 +53,23 @@ body
 .mg-inspector.hidden
   opacity 0
   z-index -1
+
+
+#mg-overlays
+  position fixed
+  left 0
+  top 0
+  // width 100vw
+  // height 100vh
+  display flex
+  justify-content center
+
+  #mg-master-volume
+    color white
+    padding 10px
+
+  #mg-master-volume.visible
+    opacity 1
+
+  #mg-master-volume.hidden
+    opacity 0

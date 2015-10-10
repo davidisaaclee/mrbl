@@ -28,7 +28,12 @@ class SynthPool
         voice.synth.output.connect voice.gain
         voice.gain.connect @output
 
+    @update SynthStore.getAll()
+
   update: (state) ->
+    @output.gain.value =
+      state.master.volume * (if state.master.isMuted then 0 else 1)
+
     _ state.synths
       .take @options.voices
       .value()

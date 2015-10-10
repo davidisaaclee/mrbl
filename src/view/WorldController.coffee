@@ -3,9 +3,11 @@ _ = require 'lodash'
 Dispatchable = require '../util/dispatchable'
 dispatcher = require '../Dispatcher'
 WorldStore = require '../stores/World'
+UserStore = require '../stores/User'
 
 setupCameraTool = require './paper/CameraControl'
 makeTiledItem = require './paper/TiledItem'
+InfiniteTiledItem = require './paper/InfiniteTiledItem'
 makeRandomPath = require './paper/MakeRandomPath'
 randomColor = require './paper/RandomColor'
 
@@ -13,14 +15,19 @@ class WorldController
   constructor: () ->
     Dispatchable this, dispatcher
 
+    @_onViewportTransform = []
+
   attach: (paper) ->
     @setupView paper
 
     WorldStore.addChangeListener @_onChange
+    UserStore.addChangeListener @_onChange
     do @_onChange
+
 
   detach: () ->
     WorldStore.removeChangeListener @_onChange
+    UserStore.removeChangeListener @_onChange
 
   update: (state) ->
     if state.world.queued.entity?
@@ -32,6 +39,16 @@ class WorldController
           shadow: graphic.shadow
         entity: state.world.queued.entity
 
+    if state.user.position?
+      parallaxFactor = 2
+      # @_backgroundGroup.position = (new @paper.Point state.user.position).multiply (1 / parallaxFactor)
+      newOrigin = (new @paper.Point state.user.position).multiply (1 / parallaxFactor)
+      @_backgroundGroup.children['tiledBg']?.setOrigin newOrigin
+      @_backgroundGroup.children['tiledNoise']?.setOrigin newOrigin
+
+      @_onViewportTransform.forEach (cb) -> do cb
+
+
 
   setupView: (paper) ->
     @paper = paper
@@ -41,7 +58,7 @@ class WorldController
     @_entityGroup = new paper.Group
       name: 'entities'
 
-    @_backgroundGroup = @_makeBackground paper
+    @_backgroundGroup = @_makeBackground paper, paper.view.center.multiply 0.5
     @_worldGroup = new paper.Group
       name: 'world'
       children: [@_backgroundGroup, @_shadowGroup, @_entityGroup]
@@ -52,12 +69,11 @@ class WorldController
 
     scope = this
     setupCameraTool paper, tool, paper.view.element,
-      # viewItem: @_worldGroup
       onTransform: () ->
         scope.dispatch 'didViewportTransform',
           viewport: paper.view
-
-
+    @dispatch 'didViewportTransform',
+      viewport: paper.view
 
     @dispatch 'setupInspector',
       paper: paper
@@ -65,6 +81,7 @@ class WorldController
 
   _fetchState: () ->
     world: WorldStore.getAll()
+    user: UserStore.getAll()
 
   _onChange: () =>
     @state = @_fetchState()
@@ -116,9 +133,10 @@ class WorldController
     r.translate [30, 30]
     return r
 
-  _makeBackground: (paper) ->
+  _makeBackground: (paper, initialPosition) ->
     backgroundGroup = new paper.Group
       name: 'background'
+      position: initialPosition
     backgroundGroup.sendToBack()
 
     blobProto = @_makeBackgroundBlob paper, [0, 0]
@@ -126,9 +144,10 @@ class WorldController
 
     outerColor = new paper.Color 0, 0
     backgroundShapes =
-      [-10...10]
+      # [-10...10]
+      [-1..1]
         .map (x) ->
-          [-10...10].map (y) -> new paper.Point x, y
+          [-1..1].map (y) -> new paper.Point x, y
         .reduce (acc, elm) -> acc.concat elm
         .map (coordinate) =>
           clone = blobProto.clone()
@@ -139,7 +158,6 @@ class WorldController
           hues = [
             5
             187
-            # 60
           ]
 
           innerColor = new paper.Color
@@ -155,17 +173,28 @@ class WorldController
             origin: clone.bounds.center
             destination: clone.bounds.rightCenter
 
+          return clone
+
+    cloneGroup = new paper.Group backgroundShapes
+    tiledBg = new InfiniteTiledItem paper, cloneGroup,
+      overlap: new paper.Point -0.5, -0.5
+    tiledBg.name = 'tiledBg'
+    backgroundGroup.addChild tiledBg
+    updateTN = () -> tiledBg.setViewBounds paper.view.bounds
+    @_onViewportTransform.push updateTN
+    do updateTN
 
     rasterUrl = 'http://www.neilblevins.com/cg_education/procedural_noise/perlin_fractal_max.jpg'
     noise = new paper.Raster rasterUrl
     noise.opacity = 0.2
     noise.blendMode = 'multiply'
     noise.onLoad = () =>
-      tiledNoise = makeTiledItem paper, noise,
-        widthInTiles: 10
-        heightInTiles: 10
-        removeOriginal: true
-        group: backgroundGroup
+      tiledNoise = new InfiniteTiledItem paper, noise
+      tiledNoise.name = 'tiledNoise'
+      backgroundGroup.addChild tiledNoise
+      updateTN = () -> tiledNoise.setViewBounds paper.view.bounds
+      @_onViewportTransform.push updateTN
+      do updateTN
 
 
     return backgroundGroup
@@ -223,6 +252,7 @@ class WorldController
       if lastHit?
         @dispatch 'wantsEditEntity',
           id: lastHit
+        @_handleMouseHoverEntity lastHit, 'up'
 
     tool.on 'mousedown', (evt) =>
       if not lastHit? and (not paper.Key.isDown 'shift')
@@ -256,6 +286,10 @@ class WorldController
           do setStrokeWidth
 
         when 'exit'
+          if reset?
+            do reset
+
+        when 'up'
           if reset?
             do reset
 

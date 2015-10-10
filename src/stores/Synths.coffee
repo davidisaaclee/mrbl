@@ -18,11 +18,19 @@ do ->
 class Synths extends Store
   getDefaultData: () ->
     synths: []
+    master:
+      volume: 1
+      isMuted: false
 
   delegate: (payload) ->
     data = payload?.action?.data
 
     switch payload?.action?.actionType
+      when 'didMasterChangeMute'
+        {isMuted} = data
+        @data.master.isMuted = isMuted
+        @emitChange()
+
       when 'didAddEntity'
         {entity} = data
         entity.synth =
@@ -31,6 +39,7 @@ class Synths extends Store
           options: @defaultSynthOptions()
         Object.defineProperty entity.synth, 'needsFile',
           get: () -> not entity.synth.options.granular.buffer?
+        @emitChange()
 
       when 'wantsLoadSoundFile'
         {entity, file} = data
@@ -61,12 +70,10 @@ class Synths extends Store
         @emitChange()
 
       when 'didUpdateNearestEntities'
-        # data :: [{entity, distance, viewDistanceRatio}]
-        cooked = data.map ({entity, distance, viewDistanceRatio}) ->
+
+        @setLevels data.map ({entity, distance, viewDistanceRatio}) ->
           synth: entity.synth
           level: (0.5 - viewDistanceRatio) * 2.0
-
-        @setLevels cooked
         @emitChange()
 
       when 'setSynthParameter'
@@ -75,14 +82,14 @@ class Synths extends Store
         @emitChange()
 
   defaultSynthOptions: () ->
-    voices: 16
+    voices: 8
     granular:
       buffer: null
       center: 0.5
-      grainDuration: 0.05
-      durationRandom: 0.1
-      deviation: 0.1
-      fadeRatio: 0.3
+      grainDuration: 1000
+      durationRandom: 200
+      deviation: 200
+      fadeRatio: 0.5
       gain: 0.25
       detune: 0
 

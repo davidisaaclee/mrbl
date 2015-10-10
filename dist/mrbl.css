@@ -1,17 +1,38 @@
-body {
+body,
+html {
   padding: 0;
   margin: 0;
   left: 0;
   top: 0;
+  width: 100%;
+  height: 100%;
 }
-#container {
-  box-sizing: border-box;
-  padding: 40px;
+#frame {
   background-color: #000;
-  width: 100vw;
-  height: 100vh;
+  height: 100%;
+  width: 100%;
+  display: -webkit-box;
+  display: -webkit-flex;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-align: center;
+  -webkit-align-items: center;
+      -ms-flex-align: center;
+          align-items: center;
+  -webkit-box-pack: center;
+  -webkit-justify-content: center;
+      -ms-flex-pack: center;
+          justify-content: center;
+}
+#frame #container {
+  box-sizing: border-box;
+  background-color: #00f;
+  margin: 10px;
+  height: 90%;
+  width: 100%;
 }
 .mg-app {
+  box-sizing: border-box;
   position: relative;
   display: -webkit-box;
   display: -webkit-flex;
@@ -45,4 +66,27 @@ body {
 .mg-inspector.hidden {
   opacity: 0;
   z-index: -1;
+}
+#mg-overlays {
+  position: fixed;
+  left: 0;
+  top: 0;
+  display: -webkit-box;
+  display: -webkit-flex;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-pack: center;
+  -webkit-justify-content: center;
+      -ms-flex-pack: center;
+          justify-content: center;
+}
+#mg-overlays #mg-master-volume {
+  color: #fff;
+  padding: 10px;
+}
+#mg-overlays #mg-master-volume.visible {
+  opacity: 1;
+}
+#mg-overlays #mg-master-volume.hidden {
+  opacity: 0;
 }

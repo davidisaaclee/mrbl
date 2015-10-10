@@ -5,7 +5,7 @@ React = require 'react'
 # {Envelope, TriggerEnvelope} = require './audio/envelope'
 # GranularSynth = require './audio/granular'
 
-MGApp = require './view/MGApp'
+Application = require './view/Application'
 SynthPool = require './audio/SynthPool'
 
 k = require './Constants'
@@ -54,15 +54,14 @@ sp = new SynthPool
   voices: 3
 sp.output.connect k.AudioContext.destination
 
-container = document.getElementById 'container'
+container = document.body
 
-bcr = container.getBoundingClientRect()
-dim =
-  width: bcr.width - 80
-  height: bcr.height - 80
+# bcr = container.getBoundingClientRect()
 
+audio =
+  audioSource: sp.output
 
-initialProps = dim
+initialProps = _.assign {}, audio
 
-view = React.createElement MGApp, initialProps
+view = React.createElement Application, initialProps
 React.render view, container

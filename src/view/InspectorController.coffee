@@ -69,40 +69,62 @@ class InspectorController
 
 
   _setupSynthMapping: (inspectorModel) ->
+    synth = inspectorModel.entity.synth
+
     dispatchParameterChange = (paramName, value) =>
-      console.log 'change', paramName, value
       @dispatch 'setSynthParameter',
-        synth: inspectorModel.entity.synth
+        synth: synth
         parameter:
           name: paramName
           value: value
 
     makeGetFn = (paramName, transform = _.identity) ->
-      () -> transform inspectorModel.entity.synth.options.granular[paramName]
+      () -> transform synth.options.granular[paramName]
     makeSetFn = (paramName, transform = _.identity) ->
       (v) -> dispatchParameterChange paramName, transform v
 
     inspectorModel.mapParameter 'scrubberX',
-      (makeGetFn 'center'),
-      (makeSetFn 'center', ((v) -> (v + 2) % 1))
+      (makeGetFn 'center', (v) -> v * 10),
+      (makeSetFn 'center', ((v) ->
+        cooked = ((v / 10) + 2) % 1
+
+        inspectorModel.setFeedbackParameter 'playheadPosition', cooked
+        return cooked))
 
     inspectorModel.mapParameter 'backgroundX',
-      (makeGetFn 'grainDuration', (v) -> v / 0.1),
+      (makeGetFn 'grainDuration', (v) -> v / 10),
       (makeSetFn 'grainDuration', (v) ->
-        v_ = v * 0.1
+        v_ = v * 10
 
-        # in seconds
-        min = 0.05
-        max = 2
+        # in ms
+        min = 100
+        max = 1000
 
-        minRatio = min / inspectorModel.entity.synth.options.granular.buffer.duration
-        maxRatio = max / inspectorModel.entity.synth.options.granular.buffer.duration
-        Math.min maxRatio, (Math.max minRatio, v_))
+        cooked = Math.min max, (Math.max min, v_)
+        normalized = (cooked - min) / (max - min)
+        inspectorModel.setFeedbackParameter 'scrubberHeight', normalized
+
+        return cooked)
 
     inspectorModel.mapParameter 'backgroundY',
       (makeGetFn 'detune', ((v) -> v / 50)),
-      (makeSetFn 'detune', ((v) -> v * 50))
+      (makeSetFn 'detune', ((v) ->
+        cooked = v * 50
+        min = -1200
+        max = 1200
+        ranged = (Math.max min, (Math.min max, cooked))
+        normalized = (ranged - min) / (max - min)
+        # inspectorModel.setFeedbackParameter 'itemAgitation', normalized
+        inspectorModel.setFeedbackParameter 'hue', normalized / 3
+        inspectorModel.setFeedbackParameter 'lightness', normalized
+        console.log normalized
+        return cooked))
 
+    initialScrubberHeight =
+      (synth.options.granular.grainDuration - 100) / (1000 - 100)
+    inspectorModel.setFeedbackParameter \
+      'scrubberHeight',
+      initialScrubberHeight
 
   _fetchState: () ->
     editor: EditorStore.getAll()
