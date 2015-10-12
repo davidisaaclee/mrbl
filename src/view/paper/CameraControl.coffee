@@ -81,16 +81,15 @@ setupPan = (paper, tool, canvas, options) ->
   lastPoint = null
 
   canvas.addEventListener 'mousedown', (evt) ->
-    # ToolEvent.point gives us the point in project coordinates
-    # lastPoint = paper.view.projectToView evt.point
     lastPoint = new paper.Point evt.offsetX, evt.offsetY
 
   canvas.addEventListener 'mousemove', (evt) ->
     mouseButtonDown = (evt.buttons & kLeftMouseFlag) is 1
     if mouseButtonDown and not paper.Key.isDown 'option'
       pt = new paper.Point evt.offsetX, evt.offsetY
-      viewDelta = lastPoint.subtract pt
-      panInertia = viewDelta.multiply (1 / paper.view.zoom)
+      if lastPoint?
+        viewDelta = lastPoint.subtract pt
+        panInertia = viewDelta.multiply (1 / paper.view.zoom)
       lastPoint = pt
 
   tool.on 'mousedown', (evt) ->

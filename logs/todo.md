@@ -1,34 +1,16 @@
 # TODO
 
-- better structure for synths, entities, and inspectors
-  - all three should expose parameters, and make it easy to map among them or
-    to external sources
+- add ability to edit entity paths through inspector
+  - operate on cloned instances -> push to store on inspector release?
+    - would work if inspectors kept state, but trying to keep stateless
+  - paths respond to inspector state, like everything else
+    - I'm worried about the way Paper.js handles Path state
+    - but otherwise, this seems good
+    - points towards creating synth controllers - put the transform logic in a
+      separate controller class that the view can map almost directly to
+      (allowing stuff like a 1d parameter for pathwarp)
 
-  - Parameter
-    - name :: String
-    - value :: Number
-    - set :: (Number, [clamp :: [Number, Number]], [scale :: [[Number, Number], [Number, Number]]]) -> Number
-    - get :: ([unscale :: [Number, Number]]) -> Number
-
-  - ParameterizedInterface
-    ParamOptions ::=
-      value: Number
-      observer: Function
-      scale: [Number, Number]
-      clamp: [Number, Number]
-
-    - defaultParameters :: {<paramName>: ParamOptions}
-    - getAllParametersRaw: () -> {[<paramName>: <raw value>]}
-    - setAllParametersRaw: ({[<paramName>: <raw value>]}) -> ()
-    - getParameter: (name) -> Number
-    - setParameter: (name, value, isRaw = false) -> Number
-
-  - Entity extends ParameterizedInterface
-  - Synth extends ParameterizedInterface
-  - Inspector extends ParameterizedInterface
-
-  - this is all silly and just FRP, so I should just use RxJS
-  - or is it all silly and i should just join the bright-eyed "fuck it ship it" crew
+- synth controllers
 
 - fix up RedInspector
 
@@ -92,3 +74,51 @@
 
 + add master audio controls
   - it would be great if the document could be set up like, nicely at all
+
++ better structure for synths, entities, and inspectors
+  - take 3 (current)
+    - inspector is initialized with a `fetchState()` function, which returns a
+      read-only state object for the inspector
+    - the inspector draws itself off an initial state via `draw()`
+    - the inspector subscribes to change events
+    - on a change event, the inspector fetches new state via `fetchState()`;
+      then it updates anything that needs updating via an `update()` method
+    - (to pass objects between `draw()` and `update()`, I'm including a `refs`
+      property on the inspector class)
+
+  - take 1
+    - all three should expose parameters, and make it easy to map among them or
+      to external sources
+
+    - Parameter
+      - name :: String
+      - value :: Number
+      - set :: (Number, [clamp :: [Number, Number]], [scale :: [[Number, Number], [Number, Number]]]) -> Number
+      - get :: ([unscale :: [Number, Number]]) -> Number
+
+    - ParameterizedInterface
+      ParamOptions ::=
+        value: Number
+        observer: Function
+        scale: [Number, Number]
+        clamp: [Number, Number]
+
+      - defaultParameters :: {<paramName>: ParamOptions}
+      - getAllParametersRaw: () -> {[<paramName>: <raw value>]}
+      - setAllParametersRaw: ({[<paramName>: <raw value>]}) -> ()
+      - getParameter: (name) -> Number
+      - setParameter: (name, value, isRaw = false) -> Number
+
+    - Entity extends ParameterizedInterface
+    - Synth extends ParameterizedInterface
+    - Inspector extends ParameterizedInterface
+
+    - this is all silly and just FRP, so I should just use RxJS
+    - or is it all silly and i should just join the bright-eyed "fuck it ship it" crew
+
+  - take 2
+    - the inspector should operate on an isolated state - a version of the active entity's state
+    - when the inspector is invoked, it gets its initial state from the entity
+    - when the inspector is released, it pushes the state back into the store
+    - between invocation and release, the state stays within the inspector, and
+      informs all changes

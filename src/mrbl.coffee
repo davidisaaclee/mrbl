@@ -56,8 +56,6 @@ sp.output.connect k.AudioContext.destination
 
 container = document.body
 
-# bcr = container.getBoundingClientRect()
-
 audio =
   audioSource: sp.output
 

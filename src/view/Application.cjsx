@@ -38,17 +38,14 @@ Application = React.createClass
 
     canvas = @refs.canvas.getDOMNode()
     inspector = @refs.inspector.getDOMNode()
+    container = @refs.container.getDOMNode()
 
     @fieldPaperScope = @setupField canvas
     @inspectorPaperScope = @setupInspector inspector
 
-    canvas.style.width = '100%'
-    canvas.style.height = '100%'
-    inspector.style.width = '100%'
-    inspector.style.height = '100%'
-
-    @fieldPaperScope.view.viewSize = [canvas.offsetWidth, canvas.offsetHeight]
-    @inspectorPaperScope.view.viewSize = [inspector.offsetWidth, inspector.offsetHeight]
+    dim = [ container.offsetWidth, container.offsetHeight ]
+    @fieldPaperScope.view.viewSize = dim
+    @inspectorPaperScope.view.viewSize = dim
 
 
   setupField: (canvasNode) ->
