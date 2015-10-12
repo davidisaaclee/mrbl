@@ -8,6 +8,8 @@ SynthStore = require '../stores/Synths'
 RedInspector = require './inspectors/RedInspector'
 BlueInspector = require './inspectors/BlueInspector'
 
+RedSynth = require '../synth/RedSynth'
+
 scale = (inLow, inHigh, outLow, outHigh) -> (v) ->
   ((v - inLow) / (inHigh - inLow)) * (outHigh - outLow) + outLow
 
@@ -40,14 +42,18 @@ class InspectorController
         # this should be dynamic in future versions
         entity = state.editor.queuedEntity
 
+        s = new RedSynth entity.synth,
+          'agitation': 0.1
+
         @activeInspector = new RedInspector @_paper,
           (@_paper.view.bounds.size.multiply 0.8),
           () ->
-            'scrubberHeight': do ->
-              v = entity.synth.options.granular.grainDuration
-              v = (clamp 200, 1000) v
-              v = (scale 200, 1000, 0.2, 1) v
-              v = (clamp 0.0001, 0.9) v
+            # 'scrubberHeight': do ->
+            #   v = entity.synth.options.granular.grainDuration
+            #   v = (clamp 200, 1000) v
+            #   v = (scale 200, 1000, 0.2, 1) v
+            #   v = (clamp 0.0001, 0.9) v
+            'scrubberHeight': (scale 0, 1, 0.2, 0.8) (s.get 'agitation')
             'playheadPosition': entity.synth.options.granular.center
             'itemAgitation': 0
             'backgroundHue': do ->
@@ -75,14 +81,20 @@ class InspectorController
           @activeInspector.dirty()
 
         @activeInspector.addEventListener 'background.drag', (evt) =>
-          oldValue = entity.synth.options.granular.grainDuration
-          newValue =
-            ((clamp 50, 2000) (evt.data.delta.x * 10 + oldValue))
-          @dispatch 'setSynthParameter',
-            synth: entity.synth
-            parameter:
-              name: 'grainDuration'
-              value: newValue
+          oldValue = s.get 'agitation'
+          newValue = (clamp -1, 1) (evt.data.delta.x / 100)
+          newValue += oldValue
+          newValue = (clamp 0, 1) newValue
+          s.set 'agitation', newValue
+
+          # oldValue = entity.synth.options.granular.grainDuration
+          # newValue =
+          #   ((clamp 50, 2000) (evt.data.delta.x * 10 + oldValue))
+          # @dispatch 'setSynthParameter',
+          #   synth: entity.synth
+          #   parameter:
+          #     name: 'grainDuration'
+          #     value: newValue
           @activeInspector.dirty()
 
         @showInspector @_paper, @_inspectorGroup, @activeInspector

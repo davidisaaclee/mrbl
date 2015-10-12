@@ -11,6 +11,10 @@
       (allowing stuff like a 1d parameter for pathwarp)
 
 - synth controllers
+  - these should live with entities - initialize entity by giving initial
+    parameters to synth controller
+  - this would then solve the problem of inconsistency between inspector view
+    and field view
 
 - fix up RedInspector
 
