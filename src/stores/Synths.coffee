@@ -3,6 +3,9 @@ _ = require 'lodash'
 Store = require './Store'
 WorldStore = require './World'
 # SynthPool = require '../audio/SynthPool'
+
+RedSynth = require '../audio/controllers/RedSynth'
+
 k = require '../Constants'
 
 DEFAULT_BUFFER = null
@@ -31,15 +34,12 @@ class Synths extends Store
         @data.master.isMuted = isMuted
         @emitChange()
 
-      when 'didAddEntity'
-        {entity} = data
-        entity.synth =
-          id: entity.id
-          level: 0
-          options: @defaultSynthOptions()
-        Object.defineProperty entity.synth, 'needsFile',
-          get: () -> not entity.synth.options.granular.buffer?
-        @emitChange()
+      # deprecated - now initializing synth within `Entity`
+      # when 'didAddEntity'
+      #   {entity} = data
+      #   # entity.synth = @_makeDefaultSynth entity.id
+      #   console.log entity.synth, entity.controls
+      #   @emitChange()
 
       when 'wantsLoadSoundFile'
         {entity, file} = data
@@ -66,11 +66,9 @@ class Synths extends Store
           buffer = DEFAULT_BUFFER
 
         @loadBuffer buffer, entity.synth
-        entity.synth.needsFile = false
         @emitChange()
 
       when 'didUpdateNearestEntities'
-
         @setLevels data.map ({entity, distance, viewDistanceRatio}) ->
           synth: entity.synth
           level: (0.5 - viewDistanceRatio) * 2.0
@@ -81,17 +79,23 @@ class Synths extends Store
         @setParameter parameter.name, parameter.value, synth
         @emitChange()
 
-  defaultSynthOptions: () ->
-    voices: 8
-    granular:
-      buffer: null
-      center: 0.5
-      grainDuration: 1000
-      durationRandom: 200
-      deviation: 200
-      fadeRatio: 0.5
-      gain: 0.25
-      detune: 0
+  _makeDefaultSynth: (id) ->
+    r =
+      id: id
+      level: 0
+      options:
+        voices: 8
+        granular:
+          buffer: null
+          center: 0.5
+          grainDuration: 1000
+          durationRandom: 200
+          deviation: 200
+          fadeRatio: 0.5
+          gain: 0.25
+          detune: 0
+    r.controller = new RedSynth r
+    return r
 
   loadBuffer: (buffer, synthData) ->
     synthData.options.granular.buffer = buffer

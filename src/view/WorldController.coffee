@@ -31,12 +31,15 @@ class WorldController
 
   update: (state) ->
     if state.world.queued.entity?
-      graphic = @_makeEntityGraphic @paper, state.world.queued.entity
+      # graphic = @_makeEntityGraphic @paper, state.world.queued.entity
+      avatar = state.world.queued.entity.spawnAvatar @paper
+      @_entityGroup.addChild avatar
       @dispatch 'didRegisterEntity',
         paper:
           scope: @paper
-          path: graphic.path
-          shadow: graphic.shadow
+          avatar: avatar
+          # path: graphic.path
+          # shadow: graphic.shadow
         entity: state.world.queued.entity
 
     if state.user.position?

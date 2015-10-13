@@ -16,6 +16,10 @@
   - this would then solve the problem of inconsistency between inspector view
     and field view
 
+- entities! they should hold: synth, synth controller, inspector, and avatar.
+  - inspector and avatar should be more dependent
+  - this becomes sort of weird by the 2-canvas setup we currently have
+
 - fix up RedInspector
 
 - fix focusing on items

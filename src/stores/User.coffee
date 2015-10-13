@@ -46,7 +46,7 @@ class User extends Store
     distanceInfo = _ WorldStore.data.entities
       .values()
       .map (entity) ->
-        nearestPt = entity.paper.path.getNearestPoint fromPoint
+        nearestPt = entity.paper.avatar.getNearestPoint fromPoint
 
         distance: fromPoint.getDistance nearestPt
         entity: entity

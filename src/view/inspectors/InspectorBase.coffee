@@ -18,8 +18,15 @@ class InspectorBase extends Bindable
 
   ## Drawing
 
+  # Initialize all paper objects.
   draw: (paper, size) ->
     console.warn 'Inspector needs to override `draw()`.'
+
+  # Minimize down to non-interactive version; disable interactions.
+  minimize: () ->
+
+  # Maximize to interactive editor.
+  maximize: () ->
 
   remove: () -> @paperItem.remove()
 

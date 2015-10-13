@@ -3,6 +3,8 @@ Promise = (require 'es6-promise').Promise
 Store = require './Store'
 Paper = require 'paper'
 
+RedEntity = require '../entities/RedEntity'
+
 makeRandomPath = require '../view/paper/MakeRandomPath'
 
 class World extends Store
@@ -67,9 +69,10 @@ class World extends Store
   makeNewEntity: (position) ->
     id = "entity-#{@entityCount++}"
 
-    entity =
-      id: id
-      position: position
+    # entity =
+    #   id: id
+    #   position: position
+    entity = new RedEntity id, position
     return entity
 
 

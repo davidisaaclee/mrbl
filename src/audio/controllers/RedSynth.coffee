@@ -1,7 +1,4 @@
-Transformer = require '../util/Transformer'
-
-dispatcher = require '../Dispatcher'
-Dispatchable = require '../util/dispatchable'
+SynthController = require './SynthController'
 
 scale = (inLow, inHigh, outLow, outHigh) -> (v) ->
   ((v - inLow) / (inHigh - inLow)) * (outHigh - outLow) + outLow
@@ -12,10 +9,9 @@ clamp = (min, max, normalize = false) -> (v) ->
   then (scale min, max, 0, 1) r
   else r
 
-class RedSynth extends Transformer
-  constructor: (@synth) ->
-    Dispatchable this, dispatcher
-    super()
+class RedSynth extends SynthController
+  constructor: (synth) ->
+    super synth
 
     scope = this
     @_registerParameter 'agitation',
@@ -35,14 +31,7 @@ class RedSynth extends Transformer
         scope._setSynthParam 'deviation', deviation
         # scope._setSynthParam 'fadeRatio', fadeRatio
 
+
         return value
-
-  _setSynthParam: (name, value) ->
-    @dispatch 'setSynthParameter',
-      synth: @synth
-      parameter:
-        name: name
-        value: value
-
 
 module.exports = RedSynth

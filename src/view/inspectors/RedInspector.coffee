@@ -22,11 +22,11 @@ class RedInspector extends InspectorBase
       state.playheadPosition +
       @refs.background.bounds.left
 
-    {path, shadow} = @refs.entity
-    path.rotation = state.entityRotation - path.data.rotationOrigin
-    shadow.rotation = state.entityRotation - shadow.data.rotationOrigin
-    state.entity.path.rotation = state.entityRotation
-    state.entity.shadow.rotation = state.entityRotation
+    avatar = @refs.avatar
+    avatar.rotation = state.entityRotation - avatar.data.rotationOrigin
+    # shadow.rotation = state.entityRotation - shadow.data.rotationOrigin
+    state.entity.avatar.rotation = state.entityRotation
+    # state.entity.shadow.rotation = state.entityRotation
 
   # Make a new Paper.js representation of this inspector.
   draw: (state, paper, size) ->
@@ -41,15 +41,24 @@ class RedInspector extends InspectorBase
 
     @refs.background = @_createBackground state, paper, bounds
     @refs.scrubber = @_createScrubber state, paper, bounds
-    @refs.entityGroup = @_createEntity state, paper, bounds
-
+    @refs.avatar = @_createEntity state, paper, bounds
 
     result = new paper.Group
       children: [ @refs.background
                   @refs.scrubber
-                  @refs.entityGroup ]
+                  @refs.avatar ]
 
     return result
+
+
+  # Minimize down to non-interactive version; disable interactions.
+  minimize: () ->
+
+
+  # Maximize to interactive editor.
+  maximize: () ->
+
+
 
   _createBackground: (state, paper, bounds) ->
     rect = new paper.Path.Rectangle
@@ -101,34 +110,37 @@ class RedInspector extends InspectorBase
     return scrubberGroup
 
   _createEntity: (state, paper, bounds) ->
-    result = new paper.Group()
+    result = new paper.Group
+      transformChildren: false
 
-    original = state.entity.path
-    originalShadow = state.entity.shadow
+    ### ------ WTF ------ ###
 
-    copy = state.entity.path.clone()
-    shadowCopy = state.entity.shadow.clone()
+    original = state.entity.avatar
+    # originalShadow = state.entity.shadow
+
+    copy = original.clone()
+    # shadowCopy = original.clone()
+    # shadowCopy = state.entity.shadow.clone()
 
     copy.data.rotationOrigin = original.rotation
-    shadowCopy.data.rotationOrigin = originalShadow.rotation
+    # shadowCopy.data.rotationOrigin = original.rotation
 
-    copy.strokeColor = null
+    # copy.strokeColor = null
 
     delta = copy.position.negate()
     copy.translate delta
-    shadowCopy.translate delta
+    # shadowCopy.translate delta
 
-    result.addChild shadowCopy
+    # result.addChild shadowCopy
     result.addChild copy
-
-    result.transformChildren = false
 
     result.fitBounds bounds
     result.scale 0.5, 0.5
 
     @refs.entity =
-      path: copy
-      shadow: shadowCopy
+      # path: copy
+      # shadow: shadowCopy
+      avatar: copy
 
     return result
 
